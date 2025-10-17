@@ -1037,17 +1037,30 @@ class _SearchTabState extends ConsumerState<SearchTab>
                               ],
                             ),
                             const SizedBox(height: 4),
-                            if (movie.overview.isNotEmpty)
-                              Text(
-                                movie.overview,
-                                style: TextStyle(
-                                  color: Colors.grey[300],
-                                  fontSize: 11,
-                                  height: 1.3,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                            // ALWAYS SHOW OVERVIEW - NO CONDITION
+                            Builder(
+                              builder: (context) {
+                                final displayText = (movie.overview_vi?.isNotEmpty == true) ? movie.overview_vi! : 
+                                    (movie.overview.isNotEmpty ? movie.overview : 'Không có mô tả');
+                                
+                                // Debug log
+                                print('🔍 DEBUG UI: Movie "${movie.title}"');
+                                print('🔍 DEBUG UI: overview_vi = "${movie.overview_vi}"');
+                                print('🔍 DEBUG UI: overview = "${movie.overview}"');
+                                print('🔍 DEBUG UI: displayText = "$displayText"');
+                                
+                                return Text(
+                                  displayText,
+                                  style: TextStyle(
+                                    color: Colors.grey[300],
+                                    fontSize: 11,
+                                    height: 1.3,
+                                  ),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                );
+                              },
+                            ),
                           ],
                         ),
                       ),

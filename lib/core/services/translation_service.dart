@@ -78,25 +78,6 @@ class TranslationService {
     }
   }
 
-  /// Translate text to Vietnamese
-  Future<void> _translateText(String text) async {
-    if (text.isEmpty) return;
-
-    try {
-      final translation = await _translator.translate(
-        text,
-        from: 'auto', // Auto-detect source language
-        to: 'vi', // Vietnamese
-      );
-
-      _translatedText = translation.text;
-      _translatedTextController.add(_translatedText);
-      
-      debugPrint('🌐 Translated: "$text" -> "$_translatedText"');
-    } catch (e) {
-      debugPrint('Error translating text: $e');
-    }
-  }
 
   /// Manual translation (for testing)
   Future<String> translateText(String text) async {

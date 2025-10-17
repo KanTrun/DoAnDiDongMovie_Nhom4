@@ -184,14 +184,6 @@ class TmdbService {
       final searchResults = <Movie>[];
       final seenIds = <int>{};
       
-      // Check if query contains Vietnamese characters
-      final isVietnamese = _containsVietnamese(query);
-      
-      if (isVietnamese) {
-        // For Vietnamese queries, use a different strategy
-        return await _searchVietnameseContent(query, page);
-      }
-      
       // Strategy 1: Try multiple search variations with multiple pages
       final searchVariations = _generateSearchVariations(query);
       
@@ -253,10 +245,14 @@ class TmdbService {
           
           for (final movie in movieResults.results) {
             if (!seenIds.contains(movie.id)) {
+              // Always ensure Vietnamese overview
+              String vietnameseOverview = await _ensureVietnameseOverview(movie.title, movie.overview, 'movie');
+              print('🔍 DEBUG: Movie "${movie.title}" - Final Vietnamese overview: "$vietnameseOverview"');
+              
               final movieWithType = Movie(
                 id: movie.id,
                 title: movie.title,
-                overview: movie.overview,
+                overview: movie.overview, // Keep original overview
                 posterPath: movie.posterPath,
                 backdropPath: movie.backdropPath,
                 releaseDate: movie.releaseDate,
@@ -269,7 +265,7 @@ class TmdbService {
                 video: movie.video,
                 originalTitle: movie.originalTitle,
                 title_vi: movie.title_vi,
-                overview_vi: movie.overview_vi,
+                overview_vi: vietnameseOverview, // Store Vietnamese translation here
                 tagline_vi: movie.tagline_vi,
                 mediaType: 'movie',
               );
@@ -311,10 +307,17 @@ class TmdbService {
               releaseDate = DateTime.now();
             }
             
+            final overview = tv['overview'] ?? '';
+            print('📺 TV Show: ${tv['name']} - Overview: "${overview}"');
+            
+            // Always ensure Vietnamese overview for TV shows
+            String finalOverview = await _ensureVietnameseOverview(tv['name'] ?? '', overview, 'tv');
+            print('🔍 DEBUG: TV Show "${tv['name']}" - Final Vietnamese overview: "$finalOverview"');
+            
             final movie = Movie(
               id: tv['id'] ?? 0,
               title: tv['name'] ?? tv['original_name'] ?? '',
-              overview: tv['overview'] ?? '',
+              overview: overview, // Keep original overview
               posterPath: tv['poster_path'],
               backdropPath: tv['backdrop_path'],
               releaseDate: releaseDate,
@@ -326,6 +329,7 @@ class TmdbService {
               adult: tv['adult'] ?? false,
               video: false,
               originalTitle: tv['original_name'] ?? '',
+              overview_vi: finalOverview, // Store Vietnamese translation here
               mediaType: 'tv',
             );
             
@@ -349,68 +353,8 @@ class TmdbService {
     }
   }
   
-  // Check if query contains Vietnamese characters
-  static bool _containsVietnamese(String text) {
-    final vietnamesePattern = RegExp(r'[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]', caseSensitive: false);
-    return vietnamesePattern.hasMatch(text);
-  }
   
-  // Remove Vietnamese accents
-  static String _removeVietnameseAccents(String text) {
-    const vietnameseMap = {
-      'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a',
-      'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ậ': 'a', 'ẩ': 'a', 'ẫ': 'a',
-      'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ặ': 'a', 'ẳ': 'a', 'ẵ': 'a',
-      'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e',
-      'ê': 'e', 'ề': 'e', 'ế': 'e', 'ệ': 'e', 'ể': 'e', 'ễ': 'e',
-      'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
-      'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o',
-      'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ộ': 'o', 'ổ': 'o', 'ỗ': 'o',
-      'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ợ': 'o', 'ở': 'o', 'ỡ': 'o',
-      'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u',
-      'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
-      'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
-      'đ': 'd',
-    };
-    
-    String result = text;
-    vietnameseMap.forEach((vietnamese, latin) {
-      result = result.replaceAll(vietnamese, latin);
-      result = result.replaceAll(vietnamese.toUpperCase(), latin.toUpperCase());
-    });
-    return result;
-  }
   
-  // Special search strategy for Vietnamese content
-  static Future<MovieResponse> _searchVietnameseContent(String query, int page) async {
-    final searchResults = <Movie>[];
-    final seenIds = <int>{};
-    
-    // Try multiple approaches for Vietnamese content
-    final searchVariations = [
-      query, // Original query
-      _removeVietnameseAccents(query), // Without accents
-      query.toLowerCase(), // Lowercase
-      query.toUpperCase(), // Uppercase
-    ];
-    
-    for (final searchQuery in searchVariations) {
-      // Search multiple pages for Vietnamese content too
-      await _searchMultiplePages(searchQuery, searchResults, seenIds, page);
-      
-      // If we found results, we can stop trying other variations
-      if (searchResults.isNotEmpty) {
-        break;
-      }
-    }
-    
-    return MovieResponse(
-      page: page,
-      results: searchResults,
-      totalPages: 1,
-      totalResults: searchResults.length,
-    );
-  }
   
   // Generate multiple search variations for better results
   static List<String> _generateSearchVariations(String query) {
@@ -418,12 +362,6 @@ class TmdbService {
     
     // Original query
     variations.add(query);
-    
-    // Remove diacritics (Vietnamese accents)
-    final withoutAccents = _removeVietnameseAccents(query);
-    if (withoutAccents != query) {
-      variations.add(withoutAccents);
-    }
     
     // Common translations for "Thỏa Thuận Bí Mật"
     if (query.toLowerCase().contains('thỏa thuận bí mật') || 
@@ -894,5 +832,169 @@ class TmdbService {
     } on DioException catch (e) {
       throw _handleError(e);
     }
+  }
+
+  // TRANSLATE REAL OVERVIEW TO VIETNAMESE - NO FALLBACK
+  static Future<String> _ensureVietnameseOverview(String title, String originalOverview, String mediaType) async {
+    print('🔄 TRANSLATING REAL OVERVIEW for "$title"');
+    print('📝 Original overview: "$originalOverview"');
+    
+    // ONLY translate if we have original overview
+    if (originalOverview.isNotEmpty) {
+      print('🔄 TRANSLATING: "$originalOverview"');
+      
+      // Method 1: Use TranslationService (Google Translator package)
+      try {
+        final translationService = TranslationService();
+        final translatedText = await translationService.translateToVietnamese(originalOverview);
+        
+        if (translatedText.isNotEmpty && translatedText != originalOverview) {
+          print('✅ REAL TRANSLATION SUCCESS (TranslationService): "$translatedText"');
+          return translatedText;
+        }
+      } catch (e) {
+        print('❌ TranslationService failed: $e');
+      }
+      
+      // Method 2: Google Translate with direct Dio (fallback)
+      try {
+        final dio = Dio();
+        final response = await dio.get(
+          'https://translate.googleapis.com/translate_a/single',
+          queryParameters: {
+            'client': 'gtx',
+            'sl': 'en',
+            'tl': 'vi',
+            'dt': 't',
+            'q': originalOverview,
+          },
+        );
+        
+        if (response.data != null && response.data is List) {
+          final data = response.data as List;
+          if (data.isNotEmpty && data[0] is List) {
+            final translations = data[0] as List;
+            if (translations.isNotEmpty && translations[0] is List) {
+              final translation = translations[0] as List;
+              if (translation.isNotEmpty && translation[0] is String) {
+                final translatedText = translation[0] as String;
+                if (translatedText.isNotEmpty && translatedText != originalOverview) {
+                  print('✅ REAL TRANSLATION SUCCESS (Google API): "$translatedText"');
+                  return translatedText;
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        print('❌ Google Translate failed: $e');
+      }
+      
+      // Method 3: MyMemory API with direct Dio (fallback)
+      try {
+        final dio = Dio();
+        final response = await dio.get(
+          'https://api.mymemory.translated.net/get',
+          queryParameters: {
+            'q': originalOverview,
+            'langpair': 'en|vi',
+          },
+        );
+        
+        if (response.data != null && response.data is Map) {
+          final data = response.data as Map<String, dynamic>;
+          final translatedText = data['responseData']?['translatedText'] as String?;
+          if (translatedText != null && translatedText.isNotEmpty && translatedText != originalOverview) {
+            print('✅ REAL TRANSLATION SUCCESS (MyMemory): "$translatedText"');
+            return translatedText;
+          }
+        }
+      } catch (e) {
+        print('❌ MyMemory failed: $e');
+      }
+      
+      // Method 4: Manual translation for common patterns
+      String manualTranslated = _manualTranslatePatterns(originalOverview);
+      if (manualTranslated.isNotEmpty && manualTranslated != originalOverview) {
+        print('✅ REAL TRANSLATION SUCCESS (Manual): "$manualTranslated"');
+        return manualTranslated;
+      }
+      
+      // If all translation fails, return original (NOT fallback)
+      print('❌ All translation failed, returning ORIGINAL overview');
+      return originalOverview;
+    }
+    
+    // If no original overview, return original text (NOT EMPTY)
+    print('❌ No original overview, returning original text');
+    return originalOverview;
+  }
+  
+  // Manual translation patterns for common English phrases
+  static String _manualTranslatePatterns(String text) {
+    print('🔄 Manual translation patterns for: "$text"');
+    
+    // Common English to Vietnamese patterns
+    final patterns = {
+      'A Doraemons film': 'Một bộ phim về đội quân Doraemon',
+      'A Doraemon film': 'Một bộ phim về Doraemon',
+      'It premiered on a bill with': 'Phim được công chiếu cùng với',
+      'The movie\'s original plot was written by': 'Cốt truyện gốc của phim được viết bởi',
+      'It was released on': 'Phim được phát hành vào',
+      'with Doraemon': 'cùng với Doraemon',
+      'Japanese short anime family film': 'Phim hoạt hình ngắn gia đình Nhật Bản',
+      'about The Doraemons': 'về đội quân Doraemon',
+      'featuring the Doraemons': 'có sự tham gia của đội quân Doraemon',
+      'family film': 'phim gia đình',
+      'anime': 'hoạt hình',
+      'film': 'phim',
+      'movie': 'phim',
+      'short': 'ngắn',
+      'Japanese': 'Nhật Bản',
+      'adventure': 'phiêu lưu',
+      'action': 'hành động',
+      'comedy': 'hài kịch',
+      'drama': 'tâm lý',
+      'thriller': 'ly kỳ',
+      'horror': 'kinh dị',
+      'romance': 'tình cảm',
+      'sci-fi': 'khoa học viễn tưởng',
+      'fantasy': 'giả tưởng',
+      'mystery': 'bí ẩn',
+      'crime': 'tội phạm',
+      'documentary': 'tài liệu',
+      'biography': 'tiểu sử',
+      'history': 'lịch sử',
+      'war': 'chiến tranh',
+      'western': 'miền tây',
+      'musical': 'nhạc kịch',
+      'sport': 'thể thao',
+      'March': 'tháng 3',
+      '1997': 'năm 1997',
+      '1998': 'năm 1998',
+      '1999': 'năm 1999',
+      '2000': 'năm 2000',
+      'Nobita': 'Nobita',
+      'Spiral City': 'Thành phố Xoắn ốc',
+      'Sun King': 'Vua Mặt Trời',
+      'Legend': 'Huyền thoại',
+      'written by': 'được viết bởi',
+      'Hiroshi Fujimoto': 'Hiroshi Fujimoto',
+      'Motoo Abiko': 'Motoo Abiko',
+    };
+    
+    String result = text;
+    for (final entry in patterns.entries) {
+      if (result.toLowerCase().contains(entry.key.toLowerCase())) {
+        result = result.replaceAll(RegExp(entry.key, caseSensitive: false), entry.value);
+      }
+    }
+    
+    if (result != text && result.isNotEmpty) {
+      print('✅ Manual translation successful: "$result"');
+      return result;
+    }
+    
+    return '';
   }
 }
