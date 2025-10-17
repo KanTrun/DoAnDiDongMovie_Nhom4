@@ -12,7 +12,7 @@ class AdminStatsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Platform Statistics'),
+        title: const Text('Thống kê nền tảng'),
         backgroundColor: Colors.red[900],
         foregroundColor: Colors.white,
         elevation: 0,
@@ -32,12 +32,12 @@ class AdminStatsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error loading statistics: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(adminStatsProvider),
-                child: const Text('Retry'),
-              ),
+            Text('Lỗi tải thống kê: $error'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => ref.refresh(adminStatsProvider),
+              child: const Text('Thử lại'),
+            ),
             ],
           ),
         ),

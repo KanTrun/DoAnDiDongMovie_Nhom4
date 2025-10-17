@@ -346,7 +346,7 @@ class ProfileTab extends ConsumerWidget {
       if (isAdmin) ...[
         {
           'icon': Icons.admin_panel_settings,
-          'title': 'Admin Dashboard',
+          'title': 'Bảng điều khiển Admin',
           'subtitle': 'Quản lý hệ thống và người dùng',
           'color': Colors.red,
           'onTap': () {

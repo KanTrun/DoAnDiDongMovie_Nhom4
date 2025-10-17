@@ -14,7 +14,7 @@ class AdminDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        title: const Text('Bảng điều khiển Admin'),
         backgroundColor: Colors.red[900],
         foregroundColor: Colors.white,
         elevation: 0,
@@ -28,11 +28,11 @@ class AdminDashboardScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Error loading dashboard: $error'),
+              Text('Lỗi tải bảng điều khiển: $error'),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.refresh(adminStatsProvider),
-                child: const Text('Retry'),
+                child: const Text('Thử lại'),
               ),
             ],
           ),
@@ -63,7 +63,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Welcome, Administrator!',
+                  'Chào mừng, Quản trị viên!',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -72,7 +72,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Manage your MoviePlus platform',
+                  'Quản lý nền tảng MoviePlus của bạn',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white70,
@@ -86,7 +86,7 @@ class AdminDashboardScreen extends ConsumerWidget {
 
           // Quick stats
           const Text(
-            'Platform Statistics',
+            'Thống kê nền tảng',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -103,37 +103,37 @@ class AdminDashboardScreen extends ConsumerWidget {
             childAspectRatio: 1.5,
             children: [
               _buildStatCard(
-                'Total Users',
+                'Tổng người dùng',
                 stats.totalUsers.toString(),
                 Icons.people,
                 Colors.blue,
               ),
               _buildStatCard(
-                'Admins',
+                'Admin',
                 stats.totalAdmins.toString(),
                 Icons.admin_panel_settings,
                 Colors.red,
               ),
               _buildStatCard(
-                'Favorites',
+                'Yêu thích',
                 stats.totalFavorites.toString(),
                 Icons.favorite,
                 Colors.pink,
               ),
               _buildStatCard(
-                'Watchlists',
+                'Danh sách xem',
                 stats.totalWatchlists.toString(),
                 Icons.playlist_add,
                 Colors.orange,
               ),
               _buildStatCard(
-                'Notes',
+                'Ghi chú',
                 stats.totalNotes.toString(),
                 Icons.note,
                 Colors.green,
               ),
               _buildStatCard(
-                'Recent Users',
+                'Người dùng mới',
                 stats.recentUsers.toString(),
                 Icons.person_add,
                 Colors.purple,
@@ -145,7 +145,7 @@ class AdminDashboardScreen extends ConsumerWidget {
 
           // Quick actions
           const Text(
-            'Quick Actions',
+            'Hành động nhanh',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -158,8 +158,8 @@ class AdminDashboardScreen extends ConsumerWidget {
               Expanded(
                 child: _buildActionCard(
                   context,
-                  'User Management',
-                  'Manage users and permissions',
+                  'Quản lý người dùng',
+                  'Quản lý người dùng và quyền hạn',
                   Icons.people_alt,
                   Colors.blue,
                   () => Navigator.push(
@@ -174,8 +174,8 @@ class AdminDashboardScreen extends ConsumerWidget {
               Expanded(
                 child: _buildActionCard(
                   context,
-                  'Platform Stats',
-                  'View detailed statistics',
+                  'Thống kê nền tảng',
+                  'Xem thống kê chi tiết',
                   Icons.analytics,
                   Colors.green,
                   () => Navigator.push(

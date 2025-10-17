@@ -12,7 +12,7 @@ class UserManagementScreen extends ConsumerStatefulWidget {
 
 class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   String _searchQuery = '';
-  String _filterRole = 'All';
+  String _filterRole = 'Tất cả';
 
   @override
   void initState() {
@@ -29,7 +29,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('User Management'),
+        title: const Text('Quản lý người dùng'),
         backgroundColor: Colors.red[900],
         foregroundColor: Colors.white,
         elevation: 0,
@@ -57,7 +57,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                   },
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: 'Search users...',
+                    hintText: 'Tìm kiếm người dùng...',
                     hintStyle: TextStyle(color: Colors.grey[400]),
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     filled: true,
@@ -72,7 +72,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 // Filter dropdown
                 Row(
                   children: [
-                    const Text('Filter by role:', style: TextStyle(color: Colors.white)),
+                    const Text('Lọc theo vai trò:', style: TextStyle(color: Colors.white)),
                     const SizedBox(width: 12),
                     DropdownButton<String>(
                       value: _filterRole,
@@ -83,7 +83,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                           _filterRole = newValue!;
                         });
                       },
-                      items: ['All', 'Admin', 'User'].map<DropdownMenuItem<String>>((String value) {
+                      items: ['Tất cả', 'Admin', 'User'].map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
@@ -128,7 +128,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     final filteredUsers = users.where((user) {
       final matchesSearch = user.email.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           (user.displayName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-      final matchesRole = _filterRole == 'All' || user.role == _filterRole;
+      final matchesRole = _filterRole == 'Tất cả' || user.role == _filterRole;
       return matchesSearch && matchesRole;
     }).toList();
 
@@ -139,7 +139,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           children: [
             Icon(Icons.people_outline, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text('No users found', style: TextStyle(color: Colors.grey)),
+            Text('Không tìm thấy người dùng', style: TextStyle(color: Colors.grey)),
           ],
         ),
       );
@@ -193,10 +193,10 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Joined: ${_formatDate(user.createdAt)}',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                ),
+            Text(
+              'Tham gia: ${_formatDate(user.createdAt)}',
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
               ],
             ),
           ],
@@ -211,7 +211,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 children: [
                   Icon(Icons.admin_panel_settings, color: Colors.blue),
                   SizedBox(width: 8),
-                  Text('Change Role'),
+                  Text('Thay đổi vai trò'),
                 ],
               ),
             ),
@@ -221,7 +221,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 children: [
                   Icon(Icons.info, color: Colors.green),
                   SizedBox(width: 8),
-                  Text('View Details'),
+                  Text('Xem chi tiết'),
                 ],
               ),
             ),
@@ -231,7 +231,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 children: [
                   Icon(Icons.delete, color: Colors.red),
                   SizedBox(width: 8),
-                  Text('Delete User'),
+                  Text('Xóa người dùng'),
                 ],
               ),
             ),
@@ -262,14 +262,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: Text(
-          'Change Role',
+          'Thay đổi vai trò',
           style: const TextStyle(color: Colors.white),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Current role: ${user.role}',
+              'Vai trò hiện tại: ${user.role}',
               style: TextStyle(color: Colors.grey[400]),
             ),
             const SizedBox(height: 16),
@@ -278,7 +278,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               dropdownColor: Colors.grey[800],
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
-                labelText: 'New Role',
+                labelText: 'Vai trò mới',
                 labelStyle: TextStyle(color: Colors.white),
               ),
               items: ['Admin', 'User'].map<DropdownMenuItem<String>>((String value) {
@@ -293,7 +293,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('User role updated to $newRole'),
+                      content: Text('Vai trò người dùng đã được cập nhật thành $newRole'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -305,7 +305,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Hủy'),
           ),
         ],
       ),
@@ -318,7 +318,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: Text(
-          'User Details',
+          'Chi tiết người dùng',
           style: const TextStyle(color: Colors.white),
         ),
         content: SingleChildScrollView(
@@ -327,23 +327,23 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildDetailRow('Email', user.email),
-              _buildDetailRow('Display Name', user.displayName ?? 'Not set'),
-              _buildDetailRow('Role', user.role),
-              _buildDetailRow('Bio Auth', user.bioAuthEnabled ? 'Enabled' : 'Disabled'),
-              _buildDetailRow('Joined', _formatDate(user.createdAt)),
+              _buildDetailRow('Tên hiển thị', user.displayName ?? 'Chưa đặt'),
+              _buildDetailRow('Vai trò', user.role),
+              _buildDetailRow('Xác thực sinh trắc', user.bioAuthEnabled ? 'Bật' : 'Tắt'),
+              _buildDetailRow('Tham gia', _formatDate(user.createdAt)),
               const Divider(color: Colors.grey),
-              _buildDetailRow('Favorites', user.favoritesCount.toString()),
-              _buildDetailRow('Watchlists', user.watchlistsCount.toString()),
-              _buildDetailRow('Notes', user.notesCount.toString()),
-              _buildDetailRow('Histories', user.historiesCount.toString()),
-              _buildDetailRow('Ratings', user.ratingsCount.toString()),
+              _buildDetailRow('Yêu thích', user.favoritesCount.toString()),
+              _buildDetailRow('Danh sách xem', user.watchlistsCount.toString()),
+              _buildDetailRow('Ghi chú', user.notesCount.toString()),
+              _buildDetailRow('Lịch sử', user.historiesCount.toString()),
+              _buildDetailRow('Đánh giá', user.ratingsCount.toString()),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: const Text('Đóng'),
           ),
         ],
       ),
@@ -383,17 +383,17 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: Text(
-          'Delete User',
+          'Xóa người dùng',
           style: const TextStyle(color: Colors.white),
         ),
         content: Text(
-          'Are you sure you want to delete ${user.displayName ?? user.email}? This action cannot be undone.',
+          'Bạn có chắc chắn muốn xóa ${user.displayName ?? user.email}? Hành động này không thể hoàn tác.',
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () {
@@ -401,13 +401,13 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               ref.read(adminNotifierProvider.notifier).deleteUser(user.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('User deleted successfully'),
+                  content: Text('Người dùng đã được xóa thành công'),
                   backgroundColor: Colors.red,
                 ),
               );
             },
             child: const Text(
-              'Delete',
+              'Xóa',
               style: TextStyle(color: Colors.red),
             ),
           ),

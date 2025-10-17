@@ -7,7 +7,7 @@ class AdminService {
   static Future<List<AdminUser>> getUsers() async {
     try {
       final token = await JwtStorage.getToken();
-      if (token == null) throw Exception('No authentication token');
+      if (token == null) throw Exception('Không có token xác thực');
 
       final dio = Dio();
       dio.options.baseUrl = AppConfig.backendBaseUrl;
@@ -20,17 +20,17 @@ class AdminService {
         final List<dynamic> usersJson = response.data;
         return usersJson.map((json) => AdminUser.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to fetch users: ${response.statusMessage}');
+        throw Exception('Không thể tải danh sách người dùng: ${response.statusMessage}');
       }
     } catch (e) {
-      throw Exception('Error fetching users: $e');
+      throw Exception('Lỗi tải danh sách người dùng: $e');
     }
   }
 
   static Future<AdminStats> getStats() async {
     try {
       final token = await JwtStorage.getToken();
-      if (token == null) throw Exception('No authentication token');
+      if (token == null) throw Exception('Không có token xác thực');
 
       final dio = Dio();
       dio.options.baseUrl = AppConfig.backendBaseUrl;
@@ -42,17 +42,17 @@ class AdminService {
       if (response.statusCode == 200) {
         return AdminStats.fromJson(response.data);
       } else {
-        throw Exception('Failed to fetch stats: ${response.statusMessage}');
+        throw Exception('Không thể tải thống kê: ${response.statusMessage}');
       }
     } catch (e) {
-      throw Exception('Error fetching stats: $e');
+      throw Exception('Lỗi tải thống kê: $e');
     }
   }
 
   static Future<void> updateUserRole(String userId, String role) async {
     try {
       final token = await JwtStorage.getToken();
-      if (token == null) throw Exception('No authentication token');
+      if (token == null) throw Exception('Không có token xác thực');
 
       final dio = Dio();
       dio.options.baseUrl = AppConfig.backendBaseUrl;
@@ -65,17 +65,17 @@ class AdminService {
       );
       
       if (response.statusCode != 200) {
-        throw Exception('Failed to update user role: ${response.statusMessage}');
+        throw Exception('Không thể cập nhật vai trò người dùng: ${response.statusMessage}');
       }
     } catch (e) {
-      throw Exception('Error updating user role: $e');
+      throw Exception('Lỗi cập nhật vai trò người dùng: $e');
     }
   }
 
   static Future<void> deleteUser(String userId) async {
     try {
       final token = await JwtStorage.getToken();
-      if (token == null) throw Exception('No authentication token');
+      if (token == null) throw Exception('Không có token xác thực');
 
       final dio = Dio();
       dio.options.baseUrl = AppConfig.backendBaseUrl;
@@ -85,10 +85,10 @@ class AdminService {
       final response = await dio.delete('/admin/users/$userId');
       
       if (response.statusCode != 200) {
-        throw Exception('Failed to delete user: ${response.statusMessage}');
+        throw Exception('Không thể xóa người dùng: ${response.statusMessage}');
       }
     } catch (e) {
-      throw Exception('Error deleting user: $e');
+      throw Exception('Lỗi xóa người dùng: $e');
     }
   }
 }
