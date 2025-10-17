@@ -24,6 +24,10 @@ namespace MoviePlusApi.Models
 
         public bool BioAuthEnabled { get; set; } = false;
 
+        [Required]
+        [MaxLength(20)]
+        public string Role { get; set; } = "User";
+
         // Navigation properties
         public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
         public virtual ICollection<Watchlist> Watchlists { get; set; } = new List<Watchlist>();

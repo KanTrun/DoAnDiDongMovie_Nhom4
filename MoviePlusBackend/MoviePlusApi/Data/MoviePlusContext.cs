@@ -27,6 +27,8 @@ namespace MoviePlusApi.Data
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
                 entity.Property(e => e.BioAuthEnabled).HasDefaultValue(false);
+                entity.Property(e => e.Role).HasDefaultValue("User");
+                entity.HasCheckConstraint("CK_User_Role", "Role IN ('Admin','User')");
             });
 
             // Favorite configuration

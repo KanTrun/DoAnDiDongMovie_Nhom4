@@ -6,6 +6,7 @@ using MoviePlusApi.Data;
 using MoviePlusApi.Services;
 using Microsoft.AspNetCore.Identity;
 using MoviePlusApi.Models;
+using MoviePlusApi.Scripts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,6 +61,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Create admin user on startup
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        await CreateAdminUser.CreateDefaultAdminAsync(scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error creating admin user: {ex.Message}");
+    }
+}
 
 // Configure to run on all network interfaces
 app.Urls.Add("http://0.0.0.0:5127");

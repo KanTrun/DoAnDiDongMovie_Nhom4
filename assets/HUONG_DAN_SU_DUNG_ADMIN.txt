@@ -1,0 +1,202 @@
+🎯 HƯỚNG DẪN SỬ DỤNG TÍNH NĂNG ADMIN - MOVIEPLUS
+====================================================
+
+📋 TỔNG QUAN TÍNH NĂNG
+=====================
+
+✅ Đã hoàn thành tính năng phân quyền Admin/User với các chức năng:
+
+🔐 **Tài khoản Admin mặc định:**
+- Email: admin@gmail.com
+- Password: Admin@123
+- Role: Admin
+
+👤 **Tài khoản User thường:**
+- Tất cả user đăng ký mới sẽ có role "User"
+- Có thể được Admin nâng cấp lên Admin
+
+🛠️ **Tính năng Admin Dashboard:**
+
+1. **Quản lý người dùng:**
+   - Xem danh sách tất cả người dùng
+   - Tìm kiếm người dùng theo email/tên
+   - Lọc người dùng theo role (Admin/User)
+   - Xem chi tiết thông tin người dùng
+   - Thay đổi role người dùng (User ↔ Admin)
+   - Xóa người dùng
+
+2. **Thống kê hệ thống:**
+   - Tổng số người dùng
+   - Số lượng Admin vs User
+   - Thống kê favorites, watchlists, notes
+   - Người dùng mới trong 7 ngày gần đây
+
+3. **Bảo mật:**
+   - Chỉ Admin mới truy cập được Admin Dashboard
+   - Admin không thể xóa chính mình
+   - Admin không thể thay đổi role của chính mình
+
+📱 CÁCH SỬ DỤNG TRONG FLUTTER APP
+================================
+
+🔹 **Đăng nhập với tài khoản Admin:**
+1. Mở ứng dụng Flutter
+2. Nhấn "Đăng nhập"
+3. Nhập email: admin@gmail.com
+4. Nhập password: Admin@123
+5. Nhấn "Đăng nhập"
+
+🔹 **Truy cập Admin Dashboard:**
+1. Sau khi đăng nhập, vào tab "Profile" (cuối cùng bên phải)
+2. Bạn sẽ thấy nút "Admin Dashboard" màu đỏ ở đầu danh sách
+3. Nhấn vào "Admin Dashboard"
+
+🔹 **Quản lý người dùng:**
+1. Trong Admin Dashboard, nhấn "User Management"
+2. Xem danh sách tất cả người dùng
+3. Sử dụng thanh tìm kiếm để tìm người dùng cụ thể
+4. Sử dụng dropdown "Filter by role" để lọc theo Admin/User
+5. Nhấn vào menu 3 chấm bên phải mỗi user để:
+   - Thay đổi role
+   - Xem chi tiết
+   - Xóa user
+
+🔹 **Xem thống kê:**
+1. Trong Admin Dashboard, nhấn "Platform Stats"
+2. Xem các thống kê chi tiết về hệ thống
+3. Nhấn nút refresh để cập nhật dữ liệu mới nhất
+
+🖥️ CÁCH SỬ DỤNG API TRỰC TIẾP
+=============================
+
+🔹 **Endpoints Admin:**
+
+1. **Lấy danh sách người dùng:**
+   ```
+   GET /api/admin/users
+   Headers: Authorization: Bearer <admin_token>
+   ```
+
+2. **Lấy thống kê hệ thống:**
+   ```
+   GET /api/admin/stats
+   Headers: Authorization: Bearer <admin_token>
+   ```
+
+3. **Thay đổi role người dùng:**
+   ```
+   PUT /api/admin/users/{userId}/role
+   Headers: Authorization: Bearer <admin_token>
+   Body: {"role": "Admin"} hoặc {"role": "User"}
+   ```
+
+4. **Xóa người dùng:**
+   ```
+   DELETE /api/admin/users/{userId}
+   Headers: Authorization: Bearer <admin_token>
+   ```
+
+5. **Xem chi tiết người dùng:**
+   ```
+   GET /api/admin/users/{userId}
+   Headers: Authorization: Bearer <admin_token>
+   ```
+
+🔹 **Ví dụ sử dụng với curl:**
+
+```bash
+# Lấy danh sách người dùng
+curl -X GET "http://localhost:5127/api/admin/users" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+
+# Thay đổi role user thành Admin
+curl -X PUT "http://localhost:5127/api/admin/users/USER_ID/role" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"role": "Admin"}'
+
+# Xóa người dùng
+curl -X DELETE "http://localhost:5127/api/admin/users/USER_ID" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+🔧 CẤU TRÚC KỸ THUẬT
+===================
+
+🔹 **Backend (.NET):**
+- ✅ Thêm cột `Role` vào bảng `Users`
+- ✅ Tạo `AdminController` với đầy đủ API
+- ✅ Tự động tạo admin user khi khởi động
+- ✅ Kiểm tra quyền Admin cho tất cả endpoints
+- ✅ Validation và error handling
+
+🔹 **Frontend (Flutter):**
+- ✅ Model `AdminUser`, `AdminStats`
+- ✅ Service `AdminService` để gọi API
+- ✅ Provider `AdminNotifier` để quản lý state
+- ✅ Screen `AdminDashboardScreen` - trang chủ admin
+- ✅ Screen `UserManagementScreen` - quản lý người dùng
+- ✅ Screen `AdminStatsScreen` - thống kê chi tiết
+- ✅ Tích hợp vào `ProfileTab` với điều kiện role
+
+🔹 **Database:**
+- ✅ Cột `Role` với constraint `IN ('Admin','User')`
+- ✅ Default value là 'User'
+- ✅ Migration đã được áp dụng
+
+🚀 CÁCH TEST TÍNH NĂNG
+=====================
+
+🔹 **Test 1: Đăng nhập Admin**
+1. Chạy backend: `cd MoviePlusBackend\MoviePlusApi && dotnet run`
+2. Chạy Flutter: `flutter run -d chrome`
+3. Đăng nhập với admin@gmail.com / Admin@123
+4. Vào Profile tab, kiểm tra có nút "Admin Dashboard"
+
+🔹 **Test 2: Quản lý người dùng**
+1. Tạo tài khoản user thường
+2. Đăng nhập với admin
+3. Vào Admin Dashboard > User Management
+4. Tìm user vừa tạo và thay đổi role thành Admin
+5. Đăng xuất admin, đăng nhập với user đó
+6. Kiểm tra user đó có nút Admin Dashboard
+
+🔹 **Test 3: API trực tiếp**
+1. Đăng nhập admin và lấy token
+2. Test API với Postman hoặc curl
+3. Kiểm tra response và error handling
+
+⚠️ LƯU Ý QUAN TRỌNG
+==================
+
+🔹 **Bảo mật:**
+- Chỉ user có role "Admin" mới truy cập được Admin Dashboard
+- Admin không thể xóa hoặc thay đổi role của chính mình
+- Tất cả API admin đều yêu cầu authentication
+
+🔹 **Performance:**
+- API có pagination cho danh sách người dùng
+- Caching cho thống kê (có thể implement sau)
+- Error handling đầy đủ
+
+🔹 **UI/UX:**
+- Giao diện admin có màu đỏ để phân biệt
+- Responsive design cho mobile và web
+- Loading states và error handling
+
+🎉 KẾT LUẬN
+===========
+
+Tính năng Admin đã được hoàn thiện với đầy đủ chức năng:
+- ✅ Phân quyền Admin/User
+- ✅ Quản lý người dùng
+- ✅ Thống kê hệ thống
+- ✅ Bảo mật và validation
+- ✅ Giao diện thân thiện
+
+Hệ thống sẵn sàng cho production với tài khoản admin mặc định!
+
+---
+📅 Tạo ngày: $(Get-Date)
+👨‍💻 Tác giả: AI Assistant
+🎯 Mục đích: Hướng dẫn sử dụng tính năng Admin

@@ -247,3 +247,86 @@ class AddRatingRequest {
     };
   }
 }
+
+// Admin Models
+class AdminUser {
+  final String id;
+  final String email;
+  final String? displayName;
+  final String role;
+  final DateTime createdAt;
+  final bool bioAuthEnabled;
+  final int favoritesCount;
+  final int watchlistsCount;
+  final int notesCount;
+  final int historiesCount;
+  final int ratingsCount;
+
+  AdminUser({
+    required this.id,
+    required this.email,
+    this.displayName,
+    required this.role,
+    required this.createdAt,
+    required this.bioAuthEnabled,
+    required this.favoritesCount,
+    required this.watchlistsCount,
+    required this.notesCount,
+    required this.historiesCount,
+    required this.ratingsCount,
+  });
+
+  factory AdminUser.fromJson(Map<String, dynamic> json) {
+    return AdminUser(
+      id: json['id'] ?? '',
+      email: json['email'] ?? '',
+      displayName: json['displayName'],
+      role: json['role'] ?? 'User',
+      createdAt: DateTime.parse(json['createdAt']),
+      bioAuthEnabled: json['bioAuthEnabled'] ?? false,
+      favoritesCount: json['favoritesCount'] ?? 0,
+      watchlistsCount: json['watchlistsCount'] ?? 0,
+      notesCount: json['notesCount'] ?? 0,
+      historiesCount: json['historiesCount'] ?? 0,
+      ratingsCount: json['ratingsCount'] ?? 0,
+    );
+  }
+}
+
+class AdminStats {
+  final int totalUsers;
+  final int totalAdmins;
+  final int totalRegularUsers;
+  final int totalFavorites;
+  final int totalWatchlists;
+  final int totalNotes;
+  final int totalHistories;
+  final int totalRatings;
+  final int recentUsers;
+
+  AdminStats({
+    required this.totalUsers,
+    required this.totalAdmins,
+    required this.totalRegularUsers,
+    required this.totalFavorites,
+    required this.totalWatchlists,
+    required this.totalNotes,
+    required this.totalHistories,
+    required this.totalRatings,
+    required this.recentUsers,
+  });
+
+  factory AdminStats.fromJson(Map<String, dynamic> json) {
+    return AdminStats(
+      totalUsers: json['totalUsers'] ?? 0,
+      totalAdmins: json['totalAdmins'] ?? 0,
+      totalRegularUsers: json['totalRegularUsers'] ?? 0,
+      totalFavorites: json['totalFavorites'] ?? 0,
+      totalWatchlists: json['totalWatchlists'] ?? 0,
+      totalNotes: json['totalNotes'] ?? 0,
+      totalHistories: json['totalHistories'] ?? 0,
+      totalRatings: json['totalRatings'] ?? 0,
+      recentUsers: json['recentUsers'] ?? 0,
+    );
+  }
+}

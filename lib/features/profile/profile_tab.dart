@@ -5,6 +5,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/backend_provider.dart';
 import '../favorites/favorites_tab.dart';
 import '../watchlist/watchlist_tab.dart';
+import '../admin/admin_dashboard_screen.dart';
 import 'settings_tab.dart';
 
 class ProfileTab extends ConsumerWidget {
@@ -337,7 +338,25 @@ class ProfileTab extends ConsumerWidget {
   }
 
   Widget _buildMenuSection(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider);
+    final isAdmin = currentUser?.role == 'Admin';
+    
     final menuItems = [
+      // Admin Dashboard - only show for admins
+      if (isAdmin) ...[
+        {
+          'icon': Icons.admin_panel_settings,
+          'title': 'Admin Dashboard',
+          'subtitle': 'Quản lý hệ thống và người dùng',
+          'color': Colors.red,
+          'onTap': () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+            );
+          },
+        },
+      ],
       {
         'icon': Icons.person_outline,
         'title': 'Chỉnh sửa hồ sơ',
@@ -407,6 +426,7 @@ class ProfileTab extends ConsumerWidget {
           icon: item['icon'] as IconData,
           title: item['title'] as String,
           subtitle: item['subtitle'] as String,
+          color: item['color'] as Color?,
           onTap: item['onTap'] as VoidCallback,
         )),
       ],
@@ -417,6 +437,7 @@ class ProfileTab extends ConsumerWidget {
     required IconData icon,
     required String title,
     required String subtitle,
+    Color? color,
     required VoidCallback onTap,
   }) {
     return Container(
@@ -436,7 +457,7 @@ class ProfileTab extends ConsumerWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[800],
+                  color: color ?? Colors.grey[800],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: Colors.white, size: 20),

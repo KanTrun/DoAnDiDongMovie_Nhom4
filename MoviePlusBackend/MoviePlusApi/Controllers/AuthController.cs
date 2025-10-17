@@ -64,11 +64,12 @@ namespace MoviePlusApi.Controllers
 
             var token = _jwtService.GenerateToken(user);
 
-            var userDto = new UserDto
+            var userDto = new DTOs.UserDto
             {
                 Id = user.Id,
                 Email = user.Email,
                 DisplayName = user.DisplayName,
+                Role = user.Role,
                 BioAuthEnabled = user.BioAuthEnabled,
                 CreatedAt = user.CreatedAt
             };
@@ -92,11 +93,12 @@ namespace MoviePlusApi.Controllers
                 return Unauthorized();
             }
 
-            var userDto = new UserDto
+            var userDto = new DTOs.UserDto
             {
                 Id = user.Id,
                 Email = user.Email,
                 DisplayName = user.DisplayName,
+                Role = user.Role,
                 BioAuthEnabled = user.BioAuthEnabled,
                 CreatedAt = user.CreatedAt
             };
