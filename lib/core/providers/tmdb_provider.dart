@@ -260,3 +260,27 @@ class SearchStateNotifier extends StateNotifier<SearchState> {
     state = state.copyWith(isSearching: isSearching);
   }
 }
+
+// =========================
+//     TV SHOW PROVIDERS
+// =========================
+
+// TV Show detail provider
+final tvShowDetailProvider = FutureProvider.family<TvShowDetail, int>((ref, tvShowId) async {
+  return TmdbService.getTvShowDetails(tvShowId);
+});
+
+// TV Show videos provider
+final tvShowVideosProvider = FutureProvider.family<List<Video>, int>((ref, tvShowId) async {
+  return TmdbService.getTvShowVideos(tvShowId);
+});
+
+// TV Show credits provider
+final tvShowCreditsProvider = FutureProvider.family<Credits, int>((ref, tvShowId) async {
+  return TmdbService.getTvShowCredits(tvShowId);
+});
+
+// Similar TV shows provider
+final similarTvShowsProvider = FutureProvider.family<List<TvShow>, int>((ref, tvShowId) async {
+  return TmdbService.getSimilarTvShows(tvShowId);
+});

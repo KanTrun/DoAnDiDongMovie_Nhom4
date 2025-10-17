@@ -7,11 +7,48 @@ class TmdbService {
   // Discover Movies
   static Future<MovieResponse> getPopularMovies({int page = 1}) async {
     try {
-      final response = await ApiClient.tmdb().get(
-        '/movie/popular',
-        queryParameters: {'page': page},
-      );
-      return MovieResponse.fromJson(response.data);
+      // Try Vietnamese first, then fallback to English
+      try {
+        final viResponse = await ApiClient.tmdb().get(
+          '/movie/popular',
+          queryParameters: {
+            'page': page,
+            'language': 'vi-VN',
+            'include_adult': false,
+          },
+        );
+        
+        final viResults = MovieResponse.fromJson(viResponse.data, mediaType: 'movie');
+        print('📊 Vietnamese popular movies found ${viResults.results.length} results');
+        
+        if (viResults.results.length >= 5) {
+          return viResults;
+        }
+        
+        // Fallback to English
+        final enResponse = await ApiClient.tmdb().get(
+          '/movie/popular',
+          queryParameters: {
+            'page': page,
+            'language': 'en-US',
+            'include_adult': false,
+          },
+        );
+        
+        final enResults = MovieResponse.fromJson(enResponse.data, mediaType: 'movie');
+        print('📊 English popular movies found ${enResults.results.length} results');
+        
+        return enResults;
+      } catch (e) {
+        print('❌ Language-specific popular movies failed: $e');
+        
+        // Fallback to default
+        final response = await ApiClient.tmdb().get(
+          '/movie/popular',
+          queryParameters: {'page': page},
+        );
+        return MovieResponse.fromJson(response.data, mediaType: 'movie');
+      }
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -23,7 +60,7 @@ class TmdbService {
         '/movie/top_rated',
         queryParameters: {'page': page},
       );
-      return MovieResponse.fromJson(response.data);
+      return MovieResponse.fromJson(response.data, mediaType: 'movie');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -35,7 +72,7 @@ class TmdbService {
         '/movie/upcoming',
         queryParameters: {'page': page},
       );
-      return MovieResponse.fromJson(response.data);
+      return MovieResponse.fromJson(response.data, mediaType: 'movie');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -47,7 +84,7 @@ class TmdbService {
         '/movie/now_playing',
         queryParameters: {'page': page},
       );
-      return MovieResponse.fromJson(response.data);
+      return MovieResponse.fromJson(response.data, mediaType: 'movie');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -62,7 +99,7 @@ class TmdbService {
         '/trending/movie/$timeWindow',
         queryParameters: {'page': page},
       );
-      return MovieResponse.fromJson(response.data);
+      return MovieResponse.fromJson(response.data, mediaType: 'movie');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -80,7 +117,11 @@ class TmdbService {
     String? withOriginalLanguage,
   }) async {
     try {
-      final queryParams = <String, dynamic>{'page': page};
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'include_adult': false,
+        'include_video': false,
+      };
       
       if (sortBy != null) queryParams['sort_by'] = sortBy;
       if (withGenres != null) queryParams['with_genres'] = withGenres;
@@ -91,31 +132,329 @@ class TmdbService {
       if (releaseDateLte != null) queryParams['release_date.lte'] = releaseDateLte;
       if (withOriginalLanguage != null) queryParams['with_original_language'] = withOriginalLanguage;
 
-      final response = await ApiClient.tmdb().get(
-        '/discover/movie',
-        queryParameters: queryParams,
-      );
-      return MovieResponse.fromJson(response.data);
+      // Try Vietnamese first, then fallback to English
+      try {
+        final viParams = Map<String, dynamic>.from(queryParams);
+        viParams['language'] = 'vi-VN';
+        
+        final response = await ApiClient.tmdb().get(
+          '/discover/movie',
+          queryParameters: viParams,
+        );
+        
+        final movieResponse = MovieResponse.fromJson(response.data, mediaType: 'movie');
+        print('📊 Vietnamese discover found ${movieResponse.results.length} results');
+        
+        // If we have good results, return them
+        if (movieResponse.results.length >= 5) {
+          return movieResponse;
+        }
+        
+        // Otherwise, try English
+        final enParams = Map<String, dynamic>.from(queryParams);
+        enParams['language'] = 'en-US';
+        
+        final enResponse = await ApiClient.tmdb().get(
+          '/discover/movie',
+          queryParameters: enParams,
+        );
+        
+        final enMovieResponse = MovieResponse.fromJson(enResponse.data, mediaType: 'movie');
+        print('📊 English discover found ${enMovieResponse.results.length} results');
+        
+        return enMovieResponse;
+      } catch (e) {
+        print('❌ Language-specific discover failed: $e');
+        
+        // Fallback to default discover
+        final response = await ApiClient.tmdb().get(
+          '/discover/movie',
+          queryParameters: queryParams,
+        );
+        return MovieResponse.fromJson(response.data, mediaType: 'movie');
+      }
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  // Search
+  // Search - Enhanced multi-language search for both Movies and TV Shows
   static Future<MovieResponse> searchMovies(String query, {int page = 1}) async {
     try {
-      final response = await ApiClient.tmdb().get(
-        '/search/movie',
-        queryParameters: {
-          'query': query,
-          'page': page,
-        },
+      final searchResults = <Movie>[];
+      final seenIds = <int>{};
+      
+      // Check if query contains Vietnamese characters
+      final isVietnamese = _containsVietnamese(query);
+      
+      if (isVietnamese) {
+        // For Vietnamese queries, use a different strategy
+        return await _searchVietnameseContent(query, page);
+      }
+      
+      // Strategy 1: Try multiple search variations with multiple pages
+      final searchVariations = _generateSearchVariations(query);
+      
+      for (final searchQuery in searchVariations) {
+        // Search multiple pages for comprehensive results
+        await _searchMultiplePages(searchQuery, searchResults, seenIds, page);
+        
+        // If we found results, we can stop trying other variations
+        if (searchResults.isNotEmpty) {
+          break;
+        }
+      }
+      
+      return MovieResponse(
+        page: page,
+        results: searchResults,
+        totalPages: 1,
+        totalResults: searchResults.length,
       );
-      return MovieResponse.fromJson(response.data);
     } on DioException catch (e) {
+      print('❌ Search error: ${e.message}');
+      if (e.response?.data != null) {
+        print('📄 Error data: ${e.response?.data}');
+      }
       throw _handleError(e);
     }
   }
+  
+  // Search multiple pages for comprehensive results
+  static Future<void> _searchMultiplePages(String query, List<Movie> searchResults, Set<int> seenIds, int startPage) async {
+    const maxPages = 5; // Search up to 5 pages for comprehensive results
+    bool hasMoreResults = true;
+    
+    print('🔍 COMPREHENSIVE SEARCH: Starting multi-page search for "$query"');
+    
+    for (int currentPage = startPage; currentPage <= maxPages && hasMoreResults; currentPage++) {
+      print('🔍 Searching page $currentPage for "$query"');
+      
+      bool pageHasResults = false;
+      
+      // Search Movies
+      try {
+        final movieResponse = await ApiClient.tmdb().get(
+          '/search/movie',
+          queryParameters: {
+            'query': query,
+            'page': currentPage,
+            'include_adult': false,
+            'include_video': false,
+            'language': 'vi-VN',
+          },
+        );
+        
+        final movieResults = MovieResponse.fromJson(movieResponse.data, mediaType: 'movie');
+        
+        if (movieResults.results.isNotEmpty) {
+          pageHasResults = true;
+          print('📊 Page $currentPage: Found ${movieResults.results.length} movies');
+          
+          for (final movie in movieResults.results) {
+            if (!seenIds.contains(movie.id)) {
+              final movieWithType = Movie(
+                id: movie.id,
+                title: movie.title,
+                overview: movie.overview,
+                posterPath: movie.posterPath,
+                backdropPath: movie.backdropPath,
+                releaseDate: movie.releaseDate,
+                voteAverage: movie.voteAverage,
+                voteCount: movie.voteCount,
+                popularity: movie.popularity,
+                originalLanguage: movie.originalLanguage,
+                genreIds: movie.genreIds,
+                adult: movie.adult,
+                video: movie.video,
+                originalTitle: movie.originalTitle,
+                title_vi: movie.title_vi,
+                overview_vi: movie.overview_vi,
+                tagline_vi: movie.tagline_vi,
+                mediaType: 'movie',
+              );
+              searchResults.add(movieWithType);
+              seenIds.add(movie.id);
+            }
+          }
+        }
+      } catch (e) {
+        // Movie search failed, continue with next page
+      }
+      
+      // Search TV Shows
+      try {
+        final tvResponse = await ApiClient.tmdb().get(
+          '/search/tv',
+          queryParameters: {
+            'query': query,
+            'page': currentPage,
+            'include_adult': false,
+            'language': 'vi-VN',
+          },
+        );
+        
+        final tvResults = tvResponse.data['results'] as List<dynamic>? ?? [];
+        
+        if (tvResults.isNotEmpty) {
+          pageHasResults = true;
+          print('📊 Page $currentPage: Found ${tvResults.length} TV shows');
+          
+          for (final tv in tvResults) {
+            DateTime releaseDate = DateTime.now();
+            try {
+              final dateStr = tv['first_air_date'] as String?;
+              if (dateStr != null && dateStr.isNotEmpty) {
+                releaseDate = DateTime.parse(dateStr);
+              }
+            } catch (e) {
+              releaseDate = DateTime.now();
+            }
+            
+            final movie = Movie(
+              id: tv['id'] ?? 0,
+              title: tv['name'] ?? tv['original_name'] ?? '',
+              overview: tv['overview'] ?? '',
+              posterPath: tv['poster_path'],
+              backdropPath: tv['backdrop_path'],
+              releaseDate: releaseDate,
+              voteAverage: (tv['vote_average'] ?? 0.0).toDouble(),
+              voteCount: tv['vote_count'] ?? 0,
+              popularity: (tv['popularity'] ?? 0.0).toDouble(),
+              originalLanguage: tv['original_language'] ?? '',
+              genreIds: List<int>.from(tv['genre_ids'] ?? []),
+              adult: tv['adult'] ?? false,
+              video: false,
+              originalTitle: tv['original_name'] ?? '',
+              mediaType: 'tv',
+            );
+            
+            if (!seenIds.contains(movie.id) && movie.id > 0) {
+              searchResults.add(movie);
+              seenIds.add(movie.id);
+            }
+          }
+        }
+      } catch (e) {
+        // TV search failed, continue with next page
+      }
+      
+      // If no results on this page, stop searching more pages
+      if (!pageHasResults) {
+        hasMoreResults = false;
+        print('📊 No more results found on page $currentPage, stopping search');
+      }
+      
+      print('📊 Total results so far: ${searchResults.length}');
+    }
+  }
+  
+  // Check if query contains Vietnamese characters
+  static bool _containsVietnamese(String text) {
+    final vietnamesePattern = RegExp(r'[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]', caseSensitive: false);
+    return vietnamesePattern.hasMatch(text);
+  }
+  
+  // Remove Vietnamese accents
+  static String _removeVietnameseAccents(String text) {
+    const vietnameseMap = {
+      'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a',
+      'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ậ': 'a', 'ẩ': 'a', 'ẫ': 'a',
+      'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ặ': 'a', 'ẳ': 'a', 'ẵ': 'a',
+      'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e',
+      'ê': 'e', 'ề': 'e', 'ế': 'e', 'ệ': 'e', 'ể': 'e', 'ễ': 'e',
+      'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
+      'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o',
+      'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ộ': 'o', 'ổ': 'o', 'ỗ': 'o',
+      'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ợ': 'o', 'ở': 'o', 'ỡ': 'o',
+      'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u',
+      'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
+      'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
+      'đ': 'd',
+    };
+    
+    String result = text;
+    vietnameseMap.forEach((vietnamese, latin) {
+      result = result.replaceAll(vietnamese, latin);
+      result = result.replaceAll(vietnamese.toUpperCase(), latin.toUpperCase());
+    });
+    return result;
+  }
+  
+  // Special search strategy for Vietnamese content
+  static Future<MovieResponse> _searchVietnameseContent(String query, int page) async {
+    final searchResults = <Movie>[];
+    final seenIds = <int>{};
+    
+    // Try multiple approaches for Vietnamese content
+    final searchVariations = [
+      query, // Original query
+      _removeVietnameseAccents(query), // Without accents
+      query.toLowerCase(), // Lowercase
+      query.toUpperCase(), // Uppercase
+    ];
+    
+    for (final searchQuery in searchVariations) {
+      // Search multiple pages for Vietnamese content too
+      await _searchMultiplePages(searchQuery, searchResults, seenIds, page);
+      
+      // If we found results, we can stop trying other variations
+      if (searchResults.isNotEmpty) {
+        break;
+      }
+    }
+    
+    return MovieResponse(
+      page: page,
+      results: searchResults,
+      totalPages: 1,
+      totalResults: searchResults.length,
+    );
+  }
+  
+  // Generate multiple search variations for better results
+  static List<String> _generateSearchVariations(String query) {
+    final variations = <String>[];
+    
+    // Original query
+    variations.add(query);
+    
+    // Remove diacritics (Vietnamese accents)
+    final withoutAccents = _removeVietnameseAccents(query);
+    if (withoutAccents != query) {
+      variations.add(withoutAccents);
+    }
+    
+    // Common translations for "Thỏa Thuận Bí Mật"
+    if (query.toLowerCase().contains('thỏa thuận bí mật') || 
+        query.toLowerCase().contains('thoa thuan bi mat')) {
+      variations.addAll([
+        'Harmony Secret',
+        'Secret Agreement',
+        'Deal Secret',
+        'Agreement Secret',
+        'Secret Deal',
+        'Harmony',
+        'Secret',
+        'Agreement',
+        'Deal'
+      ]);
+    }
+    
+    // Try with different encodings
+    try {
+      final encoded = Uri.encodeComponent(query);
+      if (encoded != query) {
+        variations.add(encoded);
+      }
+    } catch (e) {
+      print('❌ Encoding failed: $e');
+    }
+    
+    // Remove duplicates
+    return variations.toSet().toList();
+  }
+  
 
   // Movie Details
   static Future<MovieDetail> getMovieDetails(int movieId) async {
@@ -205,7 +544,7 @@ class TmdbService {
         '/movie/$movieId/similar',
         queryParameters: {'page': page},
       );
-      return MovieResponse.fromJson(response.data);
+      return MovieResponse.fromJson(response.data, mediaType: 'movie');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -217,7 +556,7 @@ class TmdbService {
         '/movie/$movieId/recommendations',
         queryParameters: {'page': page},
       );
-      return MovieResponse.fromJson(response.data);
+      return MovieResponse.fromJson(response.data, mediaType: 'movie');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -475,6 +814,7 @@ class TmdbService {
     }
   }
 
+
   // Error handling
   static String _handleError(DioException e) {
     if (e.response?.data != null && e.response?.data['status_message'] != null) {
@@ -502,6 +842,57 @@ class TmdbService {
         }
       default:
         return 'Đã xảy ra lỗi không xác định.';
+    }
+  }
+
+  // =========================
+  //     TV SHOW METHODS
+  // =========================
+
+  // Get TV show details
+  static Future<TvShowDetail> getTvShowDetails(int tvShowId) async {
+    try {
+      final response = await ApiClient.tmdb().get('/tv/$tvShowId');
+      return TvShowDetail.fromJson(response.data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get TV show videos
+  static Future<List<Video>> getTvShowVideos(int tvShowId) async {
+    try {
+      final response = await ApiClient.tmdb().get('/tv/$tvShowId/videos');
+      final videos = (response.data['results'] as List<dynamic>?)
+          ?.map((video) => Video.fromJson(video))
+          .toList() ?? [];
+      
+      // Filter for YouTube videos only
+      return videos.where((video) => video.site == 'YouTube').toList();
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get TV show credits
+  static Future<Credits> getTvShowCredits(int tvShowId) async {
+    try {
+      final response = await ApiClient.tmdb().get('/tv/$tvShowId/credits');
+      return Credits.fromJson(response.data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Get similar TV shows
+  static Future<List<TvShow>> getSimilarTvShows(int tvShowId) async {
+    try {
+      final response = await ApiClient.tmdb().get('/tv/$tvShowId/similar');
+      return (response.data['results'] as List<dynamic>?)
+          ?.map((tvShow) => TvShow.fromJson(tvShow))
+          .toList() ?? [];
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
 }

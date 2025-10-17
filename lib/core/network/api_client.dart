@@ -38,22 +38,28 @@ class ApiClient {
         // Always add API key
         options.queryParameters['api_key'] = AppConfig.tmdbApiKey;
         
-        // Only add default language if not already specified AND not for videos endpoint
-        // Videos endpoint doesn't support language filtering and returns empty results
+        // Only add default language for specific endpoints that need it
+        // Don't add language for search endpoints to allow global search
         if (!options.queryParameters.containsKey('language') && 
-            !options.path.contains('/videos')) {
+            !options.path.contains('/videos') &&
+            !options.path.contains('/search')) {
           options.queryParameters['language'] = AppConfig.tmdbLanguage;
         }
         
-        // Debug logs removed for cleaner output
+        print('🔍 TMDB Request: ${options.method} ${options.path}');
+        print('📋 Query params: ${options.queryParameters}');
         
         return handler.next(options);
       },
       onResponse: (response, handler) {
+        print('✅ TMDB Response: ${response.statusCode} - ${response.requestOptions.path}');
         return handler.next(response);
       },
       onError: (error, handler) {
-        print('🌐 TMDB API Error: ${error.message}');
+        print('❌ TMDB API Error: ${error.response?.statusCode} - ${error.message}');
+        if (error.response?.data != null) {
+          print('📄 Error data: ${error.response?.data}');
+        }
         return handler.next(error);
       },
     ));

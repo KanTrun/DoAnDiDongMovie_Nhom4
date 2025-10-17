@@ -16,6 +16,7 @@ class Movie {
   final String? title_vi;
   final String? overview_vi;
   final String? tagline_vi;
+  final String? mediaType; // 'movie' or 'tv'
 
   Movie({
     required this.id,
@@ -35,9 +36,10 @@ class Movie {
     this.title_vi,
     this.overview_vi,
     this.tagline_vi,
+    this.mediaType = 'movie',
   });
 
-  factory Movie.fromJson(Map<String, dynamic> json) {
+  factory Movie.fromJson(Map<String, dynamic> json, {String mediaType = 'movie'}) {
     return Movie(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
@@ -56,6 +58,7 @@ class Movie {
       title_vi: json['title_vi'],
       overview_vi: json['overview_vi'],
       tagline_vi: json['tagline_vi'],
+      mediaType: mediaType,
     );
   }
 
@@ -118,11 +121,11 @@ class MovieResponse {
     required this.totalPages,
   });
 
-  factory MovieResponse.fromJson(Map<String, dynamic> json) {
+  factory MovieResponse.fromJson(Map<String, dynamic> json, {String mediaType = 'movie'}) {
     return MovieResponse(
       page: json['page'] ?? 1,
       results: (json['results'] as List<dynamic>?)
-              ?.map((e) => Movie.fromJson(e as Map<String, dynamic>))
+              ?.map((e) => Movie.fromJson(e as Map<String, dynamic>, mediaType: mediaType))
               .toList() ?? [],
       totalResults: json['total_results'] ?? 0,
       totalPages: json['total_pages'] ?? 0,
@@ -362,6 +365,203 @@ class SpokenLanguage {
       englishName: json['english_name'] ?? '',
       iso: json['iso_639_1'] ?? '',
       name: json['name'] ?? '',
+    );
+  }
+}
+
+// =========================
+//     TV SHOW MODELS
+// =========================
+
+class TvShowDetail {
+  final int id;
+  final String name;
+  final String overview;
+  final String posterPath;
+  final String backdropPath;
+  final double voteAverage;
+  final int voteCount;
+  final String firstAirDate;
+  final String lastAirDate;
+  final int numberOfSeasons;
+  final int numberOfEpisodes;
+  final String status;
+  final String tagline;
+  final List<String> genres;
+  final List<String> networks;
+  final List<String> productionCountries;
+  final String originalLanguage;
+  final String originalName;
+  final double popularity;
+  final List<String> createdBy;
+  final List<String> languages;
+
+  TvShowDetail({
+    required this.id,
+    required this.name,
+    required this.overview,
+    required this.posterPath,
+    required this.backdropPath,
+    required this.voteAverage,
+    required this.voteCount,
+    required this.firstAirDate,
+    required this.lastAirDate,
+    required this.numberOfSeasons,
+    required this.numberOfEpisodes,
+    required this.status,
+    required this.tagline,
+    required this.genres,
+    required this.networks,
+    required this.productionCountries,
+    required this.originalLanguage,
+    required this.originalName,
+    required this.popularity,
+    required this.createdBy,
+    required this.languages,
+  });
+
+  factory TvShowDetail.fromJson(Map<String, dynamic> json) {
+    return TvShowDetail(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? json['original_name'] ?? '',
+      overview: json['overview'] ?? '',
+      posterPath: json['poster_path'] ?? '',
+      backdropPath: json['backdrop_path'] ?? '',
+      voteAverage: (json['vote_average'] ?? 0.0).toDouble(),
+      voteCount: json['vote_count'] ?? 0,
+      firstAirDate: json['first_air_date'] ?? '',
+      lastAirDate: json['last_air_date'] ?? '',
+      numberOfSeasons: json['number_of_seasons'] ?? 0,
+      numberOfEpisodes: json['number_of_episodes'] ?? 0,
+      status: json['status'] ?? '',
+      tagline: json['tagline'] ?? '',
+      genres: (json['genres'] as List<dynamic>?)
+          ?.map((genre) => genre['name'] as String)
+          .toList() ?? [],
+      networks: (json['networks'] as List<dynamic>?)
+          ?.map((network) => network['name'] as String)
+          .toList() ?? [],
+      productionCountries: (json['production_countries'] as List<dynamic>?)
+          ?.map((country) => country['name'] as String)
+          .toList() ?? [],
+      originalLanguage: json['original_language'] ?? '',
+      originalName: json['original_name'] ?? '',
+      popularity: (json['popularity'] ?? 0.0).toDouble(),
+      createdBy: (json['created_by'] as List<dynamic>?)
+          ?.map((creator) => creator['name'] as String)
+          .toList() ?? [],
+      languages: (json['languages'] as List<dynamic>?)
+          ?.map((lang) => lang as String)
+          .toList() ?? [],
+    );
+  }
+}
+
+class TvShow {
+  final int id;
+  final String name;
+  final String overview;
+  final String posterPath;
+  final String backdropPath;
+  final double voteAverage;
+  final int voteCount;
+  final String firstAirDate;
+  final String originalLanguage;
+  final String originalName;
+  final double popularity;
+  final List<int> genreIds;
+  final bool adult;
+
+  TvShow({
+    required this.id,
+    required this.name,
+    required this.overview,
+    required this.posterPath,
+    required this.backdropPath,
+    required this.voteAverage,
+    required this.voteCount,
+    required this.firstAirDate,
+    required this.originalLanguage,
+    required this.originalName,
+    required this.popularity,
+    required this.genreIds,
+    required this.adult,
+  });
+
+  factory TvShow.fromJson(Map<String, dynamic> json) {
+    return TvShow(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? json['original_name'] ?? '',
+      overview: json['overview'] ?? '',
+      posterPath: json['poster_path'] ?? '',
+      backdropPath: json['backdrop_path'] ?? '',
+      voteAverage: (json['vote_average'] ?? 0.0).toDouble(),
+      voteCount: json['vote_count'] ?? 0,
+      firstAirDate: json['first_air_date'] ?? '',
+      originalLanguage: json['original_language'] ?? '',
+      originalName: json['original_name'] ?? '',
+      popularity: (json['popularity'] ?? 0.0).toDouble(),
+      genreIds: List<int>.from(json['genre_ids'] ?? []),
+      adult: json['adult'] ?? false,
+    );
+  }
+}
+
+class Video {
+  final String id;
+  final String key;
+  final String name;
+  final String site;
+  final int size;
+  final String type;
+  final bool official;
+  final String publishedAt;
+  final String thumbnailUrl;
+
+  Video({
+    required this.id,
+    required this.key,
+    required this.name,
+    required this.site,
+    required this.size,
+    required this.type,
+    required this.official,
+    required this.publishedAt,
+    required this.thumbnailUrl,
+  });
+
+  factory Video.fromJson(Map<String, dynamic> json) {
+    return Video(
+      id: json['id'] ?? '',
+      key: json['key'] ?? '',
+      name: json['name'] ?? '',
+      site: json['site'] ?? '',
+      size: json['size'] ?? 0,
+      type: json['type'] ?? '',
+      official: json['official'] ?? false,
+      publishedAt: json['published_at'] ?? '',
+      thumbnailUrl: json['thumbnail_url'] ?? '',
+    );
+  }
+}
+
+class Credits {
+  final List<Cast> cast;
+  final List<Crew> crew;
+
+  Credits({
+    required this.cast,
+    required this.crew,
+  });
+
+  factory Credits.fromJson(Map<String, dynamic> json) {
+    return Credits(
+      cast: (json['cast'] as List<dynamic>?)
+          ?.map((cast) => Cast.fromJson(cast))
+          .toList() ?? [],
+      crew: (json['crew'] as List<dynamic>?)
+          ?.map((crew) => Crew.fromJson(crew))
+          .toList() ?? [],
     );
   }
 }

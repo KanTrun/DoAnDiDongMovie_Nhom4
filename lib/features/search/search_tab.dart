@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/movie.dart';
 import '../../core/providers/tmdb_provider.dart';
-import '../../core/providers/backend_provider.dart';
-import '../../core/providers/auth_provider.dart';
 import '../movie_detail/movie_detail_screen.dart';
-import 'advanced_search_tab.dart';
+import '../movie_detail/tv_show_detail_screen.dart';
 
 class SearchTab extends ConsumerStatefulWidget {
   const SearchTab({super.key});
@@ -24,7 +22,7 @@ class _SearchTabState extends ConsumerState<SearchTab>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -51,7 +49,8 @@ class _SearchTabState extends ConsumerState<SearchTab>
               controller: _tabController,
               children: [
                 _buildQuickSearchTab(),
-                const AdvancedSearchTab(),
+                _buildMoviesTab(),
+                _buildTvShowsTab(),
               ],
             ),
           ),
@@ -250,8 +249,9 @@ class _SearchTabState extends ConsumerState<SearchTab>
                             setState(() {});
                           },
                           tabs: const [
-                            Tab(text: 'Tìm Nhanh'),
-                            Tab(text: 'Tìm Nâng Cao'),
+                            Tab(text: 'Tất Cả'),
+                            Tab(text: 'Phim'),
+                            Tab(text: 'TV Show'),
                           ],
                         ),
                       ),
@@ -396,6 +396,62 @@ class _SearchTabState extends ConsumerState<SearchTab>
     );
   }
 
+  Widget _buildMoviesTab() {
+    if (_searchController.text.trim().isEmpty) {
+      return _buildEmptyState('Nhập từ khóa để tìm kiếm phim');
+    }
+
+    return Consumer(
+      builder: (context, ref, child) {
+        final searchRequest = SearchRequest(query: _searchController.text.trim());
+        final searchResults = ref.watch(searchMoviesProvider(searchRequest));
+
+        return searchResults.when(
+          loading: () => _buildLoadingState(),
+          error: (error, stack) => _buildErrorState(error.toString()),
+          data: (searchResponse) {
+            // Filter only movies
+            final movieResults = searchResponse.results.where((m) => m.mediaType != 'tv').toList();
+            
+            if (movieResults.isEmpty) {
+              return _buildEmptyState('Không tìm thấy phim nào');
+            }
+
+            return _buildFilteredResults(movieResults, 'Phim');
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTvShowsTab() {
+    if (_searchController.text.trim().isEmpty) {
+      return _buildEmptyState('Nhập từ khóa để tìm kiếm chương trình TV');
+    }
+
+    return Consumer(
+      builder: (context, ref, child) {
+        final searchRequest = SearchRequest(query: _searchController.text.trim());
+        final searchResults = ref.watch(searchMoviesProvider(searchRequest));
+
+        return searchResults.when(
+          loading: () => _buildLoadingState(),
+          error: (error, stack) => _buildErrorState(error.toString()),
+          data: (searchResponse) {
+            // Filter only TV shows
+            final tvResults = searchResponse.results.where((m) => m.mediaType == 'tv').toList();
+            
+            if (tvResults.isEmpty) {
+              return _buildEmptyState('Không tìm thấy chương trình TV nào');
+            }
+
+            return _buildFilteredResults(tvResults, 'Chương trình TV');
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildTrendingSection() {
     return CustomScrollView(
       slivers: [
@@ -520,11 +576,20 @@ class _SearchTabState extends ConsumerState<SearchTab>
   Widget _buildTrendingMovieCard(Movie movie) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => MovieDetailScreen(movieId: movie.id),
-          ),
-        );
+        // Navigate based on mediaType
+        if (movie.mediaType == 'tv') {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => TvShowDetailScreen(tvShowId: movie.id),
+            ),
+          );
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => MovieDetailScreen(movieId: movie.id),
+            ),
+          );
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -647,21 +712,206 @@ class _SearchTabState extends ConsumerState<SearchTab>
   }
 
   Widget _buildSearchResults(List<Movie> movies) {
-    return ListView.builder(
+    // Separate movies and TV shows
+    final movieResults = movies.where((m) => m.mediaType != 'tv').toList();
+    final tvShowResults = movies.where((m) => m.mediaType == 'tv').toList();
+    
+    return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: movies.length,
-      itemBuilder: (context, index) {
-        final movie = movies[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          child: InkWell(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => MovieDetailScreen(movieId: movie.id),
-                ),
-              );
-            },
+      children: [
+        // Movies Section
+        if (movieResults.isNotEmpty) ...[
+          _buildSectionHeader('Phim', movieResults.length),
+          ...movieResults.map((movie) => _buildSearchResultCard(movie, 'movie')),
+          const SizedBox(height: 20),
+        ],
+        
+        // TV Shows Section
+        if (tvShowResults.isNotEmpty) ...[
+          _buildSectionHeader('Chương trình TV', tvShowResults.length),
+          ...tvShowResults.map((movie) => _buildSearchResultCard(movie, 'tv')),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFilteredResults(List<Movie> movies, String title) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      children: [
+        _buildSectionHeader(title, movies.length),
+        ...movies.map((movie) => _buildSearchResultCard(movie, movie.mediaType ?? 'movie')),
+      ],
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFE50914).withOpacity(0.2),
+                  const Color(0xFFB20710).withOpacity(0.1),
+                ],
+              ),
+            ),
+            child: const CircularProgressIndicator(
+              color: Color(0xFFE50914),
+              strokeWidth: 3,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Đang tìm kiếm...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.red.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 40),
+            const SizedBox(height: 12),
+            const Text(
+              'Lỗi tìm kiếm',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              error,
+              style: TextStyle(color: Colors.grey[400], fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.05),
+                ],
+              ),
+            ),
+            child: Icon(
+              Icons.movie_outlined,
+              color: Colors.grey[400],
+              size: 48,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, int count) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFE50914), Color(0xFFB20710)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '($count kết quả)',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchResultCard(Movie movie, String type) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: InkWell(
+        onTap: () {
+          // Navigate based on mediaType, with fallback
+          final mediaType = movie.mediaType ?? 'movie';
+          
+          if (mediaType == 'tv') {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => TvShowDetailScreen(tvShowId: movie.id),
+              ),
+            );
+          } else {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => MovieDetailScreen(movieId: movie.id),
+              ),
+            );
+          }
+        },
             borderRadius: BorderRadius.circular(10),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
@@ -815,7 +1065,6 @@ class _SearchTabState extends ConsumerState<SearchTab>
             ),
           ),
         );
-      },
-    );
   }
+
 }
