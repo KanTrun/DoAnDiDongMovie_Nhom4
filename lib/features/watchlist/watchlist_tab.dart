@@ -1,0 +1,664 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/models/backend_models.dart';
+import '../../core/providers/tmdb_provider.dart';
+import '../../core/providers/backend_provider.dart';
+import '../../core/providers/auth_provider.dart';
+import '../movie_detail/movie_detail_screen.dart';
+
+class WatchlistTab extends ConsumerWidget {
+  const WatchlistTab({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAuthenticated = ref.watch(isAuthenticatedProvider);
+
+    if (!isAuthenticated) {
+      return _buildNotLoggedIn(context);
+    }
+
+    final watchlistAsync = ref.watch(watchlistProvider);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF141414),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // Netflix-style App Bar with back button
+          SliverAppBar(
+            backgroundColor: const Color(0xFF141414),
+            elevation: 0,
+            floating: true,
+            snap: true,
+            pinned: true,
+            leading: Navigator.canPop(context)
+                ? Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.1),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back,
+                          color: Colors.white, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  )
+                : null,
+            title: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE50914), Color(0xFFB20710)],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFE50914).withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.bookmark, size: 18, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Danh Sách Xem',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white, size: 20),
+                  onPressed: () {
+                    ref.read(watchlistProvider.notifier).loadWatchlist();
+                  },
+                  tooltip: 'Làm mới',
+                ),
+              ),
+            ],
+          ),
+
+          // Content
+          SliverToBoxAdapter(
+            child: watchlistAsync.when(
+              loading: () => Container(
+                height: 400,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFFE50914).withOpacity(0.2),
+                              const Color(0xFFB20710).withOpacity(0.1),
+                            ],
+                          ),
+                        ),
+                        child: const CircularProgressIndicator(
+                          color: Color(0xFFE50914),
+                          strokeWidth: 3,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Đang tải...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              error: (error, stack) => Container(
+                margin: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.red.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Lỗi tải danh sách',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '$error',
+                      style: TextStyle(color: Colors.grey[400]),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ref.read(watchlistProvider.notifier).loadWatchlist();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE50914),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              ),
+              data: (watchlist) {
+                if (watchlist.isEmpty) {
+                  return _buildEmptyState(context);
+                }
+                return _buildWatchlistList(watchlist, ref);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotLoggedIn(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF141414),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF141414),
+        elevation: 0,
+        leading: Navigator.canPop(context)
+            ? Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.1),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back,
+                      color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              )
+            : null,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.blue.withOpacity(0.2),
+                      Colors.blue.withOpacity(0.1),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: Colors.blue.withOpacity(0.3),
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.bookmark_outline,
+                  size: 64,
+                  color: Colors.blue.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                'Đăng nhập để xem',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Lưu phim muốn xem để không bỏ lỡ',
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 15,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.1),
+                    Colors.white.withOpacity(0.05),
+                  ],
+                ),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                Icons.bookmark_outline,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              'Danh sách xem trống',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Thêm phim để xem sau',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 15,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWatchlistList(List<Watchlist> watchlist, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.1),
+                  Colors.transparent,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.playlist_play,
+                  color: Colors.blue,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${watchlist.length} phim',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: watchlist.length,
+          itemBuilder: (context, index) {
+            final watchlistItem = watchlist[index];
+            return _buildWatchlistCard(watchlistItem, ref);
+          },
+        ),
+        const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  Widget _buildWatchlistCard(Watchlist watchlistItem, WidgetRef ref) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Consumer(
+        builder: (context, ref, child) {
+          final movieDetailsAsync =
+              ref.watch(movieDetailsProvider(watchlistItem.movieId));
+
+          return movieDetailsAsync.when(
+            loading: () => ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  height: 110,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withOpacity(0.1),
+                        Colors.white.withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.15),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFE50914),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            error: (error, stack) => ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withOpacity(0.1),
+                        Colors.white.withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.red.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Lỗi tải thông tin',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            data: (movieDetail) => InkWell(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        MovieDetailScreen(movieId: watchlistItem.movieId),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.1),
+                          Colors.white.withOpacity(0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.15),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // Movie poster
+                        Container(
+                          width: 60,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: movieDetail.posterPath.isNotEmpty
+                                ? Image.network(
+                                    'https://image.tmdb.org/t/p/w500${movieDetail.posterPath}',
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        Container(
+                                      color: Colors.grey[850],
+                                      child: const Icon(
+                                        Icons.movie,
+                                        color: Colors.grey,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    color: Colors.grey[850],
+                                    child: const Icon(
+                                      Icons.movie,
+                                      color: Colors.grey,
+                                      size: 24,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Movie info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                movieDetail.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.2,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      movieDetail.releaseDate.year.toString(),
+                                      style: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFFE50914),
+                                          Color(0xFFB20710)
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.star,
+                                            color: Colors.white, size: 10),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          movieDetail.voteAverage
+                                              .toStringAsFixed(1),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              if (movieDetail.overview.isNotEmpty)
+                                Text(
+                                  movieDetail.overview,
+                                  style: TextStyle(
+                                    color: Colors.grey[300],
+                                    fontSize: 12,
+                                    height: 1.3,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${watchlistItem.addedAt.day}/${watchlistItem.addedAt.month}/${watchlistItem.addedAt.year}',
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Remove button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            onPressed: () {
+                              ref
+                                  .read(watchlistProvider.notifier)
+                                  .removeFromWatchlist(watchlistItem.movieId);
+                            },
+                            icon: const Icon(
+                              Icons.bookmark,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
+                            tooltip: 'Bỏ khỏi danh sách',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

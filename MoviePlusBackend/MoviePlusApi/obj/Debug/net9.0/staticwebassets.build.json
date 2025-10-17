@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "tYXct3w4R7MML+eZ6gVO27QJX4mGP4eOnTSR+5bWW1o=",
+  "Source": "MoviePlusApi",
+  "BasePath": "_content/MoviePlusApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
