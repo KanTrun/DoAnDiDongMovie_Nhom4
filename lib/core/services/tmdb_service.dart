@@ -226,16 +226,28 @@ class TmdbService {
       
       // Search Movies
       try {
+        final queryParams = {
+          'query': query,
+          'page': currentPage,
+          'include_adult': false,
+          'include_video': false,
+          'language': 'en-US', // Get English first to ensure we have overviews
+        };
+        print('🔍 API CALL: Searching movies with query="$query", page=$currentPage, language=en-US');
+        print('🔍 API URL: /search/movie with params: $queryParams');
+        
         final movieResponse = await ApiClient.tmdb().get(
           '/search/movie',
-          queryParameters: {
-            'query': query,
-            'page': currentPage,
-            'include_adult': false,
-            'include_video': false,
-            'language': 'vi-VN',
-          },
+          queryParameters: queryParams,
         );
+        print('🔍 API RESPONSE: Got ${movieResponse.data['results']?.length ?? 0} results');
+        
+        // Debug: Print raw API response for first few movies
+        final results = movieResponse.data['results'] as List<dynamic>? ?? [];
+        for (int i = 0; i < results.length && i < 3; i++) {
+          final movieData = results[i] as Map<String, dynamic>;
+          print('🔍 RAW API Movie $i: "${movieData['title']}" - Overview: "${movieData['overview']}"');
+        }
         
         final movieResults = MovieResponse.fromJson(movieResponse.data, mediaType: 'movie');
         
@@ -243,8 +255,17 @@ class TmdbService {
           pageHasResults = true;
           print('📊 Page $currentPage: Found ${movieResults.results.length} movies');
           
+          // Debug: Print all movie titles and overviews
+          for (int i = 0; i < movieResults.results.length; i++) {
+            final movie = movieResults.results[i];
+            print('📊 Movie $i: "${movie.title}" - Overview: "${movie.overview}"');
+          }
+          
           for (final movie in movieResults.results) {
             if (!seenIds.contains(movie.id)) {
+              // Debug: Check what we got from API
+              print('🔍 DEBUG API: Movie "${movie.title}" - Original overview from API: "${movie.overview}"');
+              
               // Always ensure Vietnamese overview
               String vietnameseOverview = await _ensureVietnameseOverview(movie.title, movie.overview, 'movie');
               print('🔍 DEBUG: Movie "${movie.title}" - Final Vietnamese overview: "$vietnameseOverview"');
@@ -286,7 +307,7 @@ class TmdbService {
             'query': query,
             'page': currentPage,
             'include_adult': false,
-            'language': 'vi-VN',
+            'language': 'en-US', // Get English first to ensure we have overviews
           },
         );
         
@@ -309,6 +330,7 @@ class TmdbService {
             
             final overview = tv['overview'] ?? '';
             print('📺 TV Show: ${tv['name']} - Overview: "${overview}"');
+            print('🔍 DEBUG API: TV Show "${tv['name']}" - Original overview from API: "$overview"');
             
             // Always ensure Vietnamese overview for TV shows
             String finalOverview = await _ensureVietnameseOverview(tv['name'] ?? '', overview, 'tv');

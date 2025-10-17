@@ -84,14 +84,16 @@ class TranslationService {
     if (text.isEmpty) return '';
 
     try {
+      debugPrint('🔄 Translating text: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
       final translation = await _translator.translate(
         text,
         from: 'auto',
         to: 'vi',
       );
+      debugPrint('✅ Translation result: "${translation.text.substring(0, translation.text.length > 50 ? 50 : translation.text.length)}..."');
       return translation.text;
     } catch (e) {
-      debugPrint('Error in manual translation: $e');
+      debugPrint('❌ Error in manual translation: $e');
       return text; // Return original text if translation fails
     }
   }

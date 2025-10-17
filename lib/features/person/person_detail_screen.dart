@@ -634,7 +634,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
     final title = credit['title'] ?? credit['name'] ?? 'Unknown';
     final posterPath = credit['poster_path'];
     final releaseDate = credit['release_date'] ?? credit['first_air_date'] ?? '';
-    final character = credit['character'];
+    // final character = credit['character']; // Unused variable
 
     return GestureDetector(
       onTap: () {
@@ -740,11 +740,12 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
     return vietnameseTitles[originalTitle] ?? originalTitle;
   }
 
-  Widget _buildCreditCard(BuildContext context, Map<String, dynamic> credit, [String type = 'cast']) {
+  // Widget _buildCreditCard(BuildContext context, Map<String, dynamic> credit, [String type = 'cast']) { // Unused function
+  /*
     final title = credit['title'] ?? credit['name'] ?? 'Unknown';
     final posterPath = credit['poster_path'];
     final releaseDate = credit['release_date'] ?? credit['first_air_date'] ?? '';
-    final character = credit['character'];
+    // final character = credit['character']; // Unused variable
     final job = credit['job'];
     final voteAverage = (credit['vote_average'] as num?)?.toDouble() ?? 0.0;
 
@@ -842,10 +843,10 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
               ),
             ],
             // Character or Job
-            if (type == 'cast' && character != null) ...[
+            if (type == 'cast' && credit['character'] != null) ...[
               const SizedBox(height: 1),
               Text(
-                'vai $character',
+                'vai ${credit['character']}',
                 style: TextStyle(
                   color: Colors.grey[400],
                   fontSize: 9,
@@ -872,8 +873,10 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
       ),
     );
   }
+  */
 
-  Widget _buildFilmographySection(Map<String, dynamic> credits) {
+  // Widget _buildFilmographySection(Map<String, dynamic> credits) { // Unused function
+  /*
     final cast = credits['cast'] as List<dynamic>? ?? [];
     final crew = credits['crew'] as List<dynamic>? ?? [];
     
@@ -1048,8 +1051,10 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
       ],
     );
   }
+  */
 
-  String _getDepartmentName(String department) {
+  // String _getDepartmentName(String department) { // Unused function
+  /*
     switch (department) {
       case 'Directing':
         return 'Đạo diễn';
@@ -1073,6 +1078,7 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
         return department;
     }
   }
+  */
 
   Widget _buildPersonalInfoSection(Map<String, dynamic> person) {
     final hasPersonalInfo = person['birthday'] != null || 
@@ -1149,8 +1155,8 @@ class _PersonDetailScreenState extends ConsumerState<PersonDetailScreen> {
   }
 
   Widget _buildBiographySection(Map<String, dynamic> person) {
-    final biography = person['biography'] as String? ?? '';
-    final bioLanguage = person['biography_language'] as String? ?? 'unknown';
+    // final biography = person['biography'] as String? ?? ''; // Unused variable
+    // final bioLanguage = person['biography_language'] as String? ?? 'unknown'; // Unused variable
     
     // Skip this section since biography is now in the header and we don't want duplication
     return const SizedBox();

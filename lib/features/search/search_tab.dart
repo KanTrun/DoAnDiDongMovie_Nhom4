@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/movie.dart';
 import '../../core/providers/tmdb_provider.dart';
+import '../../core/services/translation_service.dart';
 import '../movie_detail/movie_detail_screen.dart';
 import '../movie_detail/tv_show_detail_screen.dart';
 
@@ -18,6 +19,7 @@ class _SearchTabState extends ConsumerState<SearchTab>
   final TextEditingController _searchController = TextEditingController();
   late TabController _tabController;
   bool _isSearchFocused = false;
+  final TranslationService _translationService = TranslationService();
 
   @override
   void initState() {
@@ -1037,29 +1039,10 @@ class _SearchTabState extends ConsumerState<SearchTab>
                               ],
                             ),
                             const SizedBox(height: 4),
-                            // ALWAYS SHOW OVERVIEW - NO CONDITION
-                            Builder(
-                              builder: (context) {
-                                final displayText = (movie.overview_vi?.isNotEmpty == true) ? movie.overview_vi! : 
-                                    (movie.overview.isNotEmpty ? movie.overview : 'Không có mô tả');
-                                
-                                // Debug log
-                                print('🔍 DEBUG UI: Movie "${movie.title}"');
-                                print('🔍 DEBUG UI: overview_vi = "${movie.overview_vi}"');
-                                print('🔍 DEBUG UI: overview = "${movie.overview}"');
-                                print('🔍 DEBUG UI: displayText = "$displayText"');
-                                
-                                return Text(
-                                  displayText,
-                                  style: TextStyle(
-                                    color: Colors.grey[300],
-                                    fontSize: 11,
-                                    height: 1.3,
-                                  ),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                );
-                              },
+                            // Auto-translatable overview
+                            _TranslatableOverview(
+                              movie: movie,
+                              translationService: _translationService,
                             ),
                           ],
                         ),
@@ -1079,5 +1062,124 @@ class _SearchTabState extends ConsumerState<SearchTab>
           ),
         );
   }
+}
 
+// =========================
+//   TRANSLATABLE OVERVIEW WIDGET
+// =========================
+class _TranslatableOverview extends StatefulWidget {
+  final Movie movie;
+  final TranslationService translationService;
+
+  const _TranslatableOverview({
+    required this.movie,
+    required this.translationService,
+  });
+
+  @override
+  State<_TranslatableOverview> createState() => _TranslatableOverviewState();
+}
+
+class _TranslatableOverviewState extends State<_TranslatableOverview> {
+  String? _translatedOverview;
+  bool _isTranslating = false;
+  bool _hasTriedTranslation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoTranslateIfNeeded();
+  }
+
+  Future<void> _autoTranslateIfNeeded() async {
+    // Only auto-translate if we don't have Vietnamese overview and have English overview
+    if (widget.movie.overview_vi?.isNotEmpty == true) {
+      return; // Already have Vietnamese
+    }
+    
+    if (widget.movie.overview.isEmpty) {
+      return; // No overview to translate
+    }
+    
+    if (_hasTriedTranslation) {
+      return; // Already tried
+    }
+
+    setState(() {
+      _isTranslating = true;
+      _hasTriedTranslation = true;
+    });
+
+    try {
+      final translated = await widget.translationService.translateToVietnamese(widget.movie.overview);
+      if (mounted && translated.isNotEmpty && translated != widget.movie.overview) {
+        setState(() {
+          _translatedOverview = translated;
+          _isTranslating = false;
+        });
+      } else {
+        setState(() {
+          _isTranslating = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Auto-translation failed for "${widget.movie.title}": $e');
+      setState(() {
+        _isTranslating = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Priority: Vietnamese original > Translated > English original > "No description"
+    String displayText;
+    
+    if (widget.movie.overview_vi?.isNotEmpty == true) {
+      displayText = widget.movie.overview_vi!;
+    } else if (_translatedOverview?.isNotEmpty == true) {
+      displayText = _translatedOverview!;
+    } else if (widget.movie.overview.isNotEmpty) {
+      displayText = widget.movie.overview;
+    } else {
+      displayText = 'Không có mô tả';
+    }
+
+    // Debug log to help troubleshoot
+    print('🔍 _TranslatableOverview for "${widget.movie.title}":');
+    print('  - overview_vi: "${widget.movie.overview_vi}"');
+    print('  - _translatedOverview: "$_translatedOverview"');
+    print('  - overview: "${widget.movie.overview}"');
+    print('  - displayText: "$displayText"');
+    print('  - _isTranslating: $_isTranslating');
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            displayText,
+            style: TextStyle(
+              color: Colors.grey[300],
+              fontSize: 11,
+              height: 1.3,
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (_isTranslating) ...[
+          const SizedBox(width: 6),
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.grey[400],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }

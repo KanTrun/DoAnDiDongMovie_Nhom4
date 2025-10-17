@@ -25,6 +25,9 @@ class MovieDetailScreen extends ConsumerStatefulWidget {
 class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
     with TickerProviderStateMixin {
   bool _isOverviewExpanded = false;
+  bool _isOverviewTranslated = false;
+  String _originalOverview = '';
+  String _translatedOverview = '';
 
   // ScrollControllers
   final ScrollController _videoScrollController = ScrollController();
@@ -59,6 +62,40 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
     _mainScrollController.dispose();
     _heroAnimationController.dispose();
     super.dispose();
+  }
+
+  // =========================
+  //    OVERVIEW TRANSLATION
+  // =========================
+  Future<void> _toggleOverviewTranslation() async {
+    if (_isOverviewTranslated) {
+      // Switch back to original
+      setState(() {
+        _isOverviewTranslated = false;
+      });
+    } else {
+      // Translate to Vietnamese
+      setState(() {
+        _isOverviewTranslated = true;
+      });
+      
+      // If we haven't translated yet, do it now
+      if (_translatedOverview == _originalOverview) {
+        try {
+          final translationService = TranslationService();
+          final translated = await translationService.translateToVietnamese(_originalOverview);
+          setState(() {
+            _translatedOverview = translated.isNotEmpty ? translated : _originalOverview;
+          });
+        } catch (e) {
+          print('❌ Translation failed: $e');
+          setState(() {
+            _translatedOverview = _originalOverview;
+            _isOverviewTranslated = false;
+          });
+        }
+      }
+    }
   }
 
   // =========================
@@ -472,26 +509,82 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
   //         OVERVIEW
   // =========================
   Widget _buildOverview(String overview) {
+    print('🔍 DEBUG: _buildOverview called with: "$overview"');
     if (overview.isEmpty) return const SizedBox.shrink();
+    
+    // Store original overview on first load
+    if (_originalOverview.isEmpty) {
+      _originalOverview = overview;
+      _translatedOverview = overview; // Default to original
+    }
+    
+    final displayOverview = _isOverviewTranslated ? _translatedOverview : _originalOverview;
+    
     return Container(
       color: const Color(0xFF141414), // Solid background
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Tóm tắt',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
+          Row(
+            children: [
+              const Text(
+                'Tóm tắt',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => _toggleOverviewTranslation(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _isOverviewTranslated 
+                        ? const Color(0xFFE50914).withOpacity(0.2)
+                        : Colors.grey[800]!.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _isOverviewTranslated 
+                          ? const Color(0xFFE50914)
+                          : Colors.grey[600]!,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.translate,
+                        color: _isOverviewTranslated 
+                            ? const Color(0xFFE50914)
+                            : Colors.grey[400],
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _isOverviewTranslated ? 'Tiếng Việt' : 'Dịch',
+                        style: TextStyle(
+                          color: _isOverviewTranslated 
+                              ? const Color(0xFFE50914)
+                              : Colors.grey[400],
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           AnimatedCrossFade(
             firstChild: Text(
-              overview,
+              displayOverview,
               style: TextStyle(
                 color: Colors.grey[300],
                 fontSize: 15,
@@ -502,7 +595,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
               overflow: TextOverflow.ellipsis,
             ),
             secondChild: Text(
-              overview,
+              displayOverview,
               style: TextStyle(
                 color: Colors.grey[300],
                 fontSize: 15,
@@ -515,7 +608,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
                 : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 300),
           ),
-          if (overview.length > 150)
+          if (displayOverview.length > 150)
             GestureDetector(
               onTap: () => setState(() => _isOverviewExpanded = !_isOverviewExpanded),
               child: Container(
@@ -575,21 +668,27 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
             ),
             child: Column(
               children: [
-                if (movie.status.isNotEmpty) _buildDetailRow('Trạng thái', movie.status),
+                if (movie.status.isNotEmpty) _buildDetailRow('Trạng thái', _translateStatus(movie.status)),
                 _buildDetailRow('Ngày phát hành', _formatDate(movie.releaseDate)),
                 if (movie.runtime > 0) _buildDetailRow('Thời lượng', '${movie.runtime} phút'),
                 if (movie.budget > 0) _buildDetailRow('Ngân sách', _formatCurrency(movie.budget)),
                 if (movie.revenue > 0) _buildDetailRow('Doanh thu', _formatCurrency(movie.revenue)),
                 if (movie.originalLanguage.isNotEmpty)
-                  _buildDetailRow('Ngôn ngữ gốc', movie.originalLanguage.toUpperCase()),
+                  _buildDetailRow('Ngôn ngữ gốc', _translateLanguage(movie.originalLanguage)),
                 if (movie.productionCompanies.isNotEmpty)
                   _buildDetailRow('Hãng sản xuất', movie.productionCompanies.map((c) => c.name).join(', ')),
                 if (movie.productionCountries.isNotEmpty)
-                  _buildDetailRow('Quốc gia', movie.productionCountries.map((c) => c.name).join(', ')),
+                  _buildDetailRow('Quốc gia', movie.productionCountries.map((c) => _translateCountry(c.name)).join(', ')),
                 if (movie.spokenLanguages.isNotEmpty)
-                  _buildDetailRow('Ngôn ngữ', movie.spokenLanguages.map((l) => l.name).join(', ')),
+                  _buildDetailRow('Ngôn ngữ', movie.spokenLanguages.map((l) => _translateLanguage(l.name)).join(', ')),
                 if (movie.homepage.isNotEmpty) _buildDetailRow('Trang chủ', movie.homepage),
                 if (movie.imdbId.isNotEmpty) _buildDetailRow('IMDB ID', movie.imdbId),
+                if (movie.tagline.isNotEmpty) _buildDetailRow('Khẩu hiệu', movie.tagline),
+                _buildDetailRow('Đánh giá trung bình', '${movie.voteAverage.toStringAsFixed(1)}/10'),
+                _buildDetailRow('Số lượt đánh giá', '${movie.voteCount} lượt'),
+                _buildDetailRow('Độ phổ biến', '${movie.popularity.toStringAsFixed(1)}'),
+                if (movie.originalTitle != null && movie.originalTitle != movie.title)
+                  _buildDetailRow('Tên gốc', movie.originalTitle!),
               ],
             ),
           ),
@@ -643,6 +742,116 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
     return '\$$amount';
   }
 
+  // Translation helper functions
+  String _translateStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'released':
+        return 'Đã phát hành';
+      case 'post production':
+        return 'Hậu kỳ';
+      case 'in production':
+        return 'Đang sản xuất';
+      case 'planned':
+        return 'Đã lên kế hoạch';
+      case 'rumored':
+        return 'Tin đồn';
+      case 'canceled':
+        return 'Đã hủy';
+      default:
+        return status;
+    }
+  }
+
+  String _translateLanguage(String language) {
+    switch (language.toLowerCase()) {
+      case 'en':
+        return 'Tiếng Anh';
+      case 'vi':
+        return 'Tiếng Việt';
+      case 'ja':
+        return 'Tiếng Nhật';
+      case 'ko':
+        return 'Tiếng Hàn';
+      case 'zh':
+        return 'Tiếng Trung';
+      case 'fr':
+        return 'Tiếng Pháp';
+      case 'de':
+        return 'Tiếng Đức';
+      case 'es':
+        return 'Tiếng Tây Ban Nha';
+      case 'it':
+        return 'Tiếng Ý';
+      case 'pt':
+        return 'Tiếng Bồ Đào Nha';
+      case 'ru':
+        return 'Tiếng Nga';
+      case 'ar':
+        return 'Tiếng Ả Rập';
+      case 'hi':
+        return 'Tiếng Hindi';
+      case 'th':
+        return 'Tiếng Thái';
+      case 'id':
+        return 'Tiếng Indonesia';
+      case 'ms':
+        return 'Tiếng Malaysia';
+      case 'tl':
+        return 'Tiếng Philippines';
+      default:
+        return language;
+    }
+  }
+
+  String _translateCountry(String country) {
+    switch (country.toLowerCase()) {
+      case 'united states of america':
+        return 'Hoa Kỳ';
+      case 'united kingdom':
+        return 'Vương quốc Anh';
+      case 'france':
+        return 'Pháp';
+      case 'germany':
+        return 'Đức';
+      case 'japan':
+        return 'Nhật Bản';
+      case 'south korea':
+        return 'Hàn Quốc';
+      case 'china':
+        return 'Trung Quốc';
+      case 'india':
+        return 'Ấn Độ';
+      case 'australia':
+        return 'Úc';
+      case 'canada':
+        return 'Canada';
+      case 'italy':
+        return 'Ý';
+      case 'spain':
+        return 'Tây Ban Nha';
+      case 'brazil':
+        return 'Brazil';
+      case 'mexico':
+        return 'Mexico';
+      case 'russia':
+        return 'Nga';
+      case 'thailand':
+        return 'Thái Lan';
+      case 'vietnam':
+        return 'Việt Nam';
+      case 'indonesia':
+        return 'Indonesia';
+      case 'malaysia':
+        return 'Malaysia';
+      case 'philippines':
+        return 'Philippines';
+      case 'singapore':
+        return 'Singapore';
+      default:
+        return country;
+    }
+  }
+
   // =========================
   //          CAST
   // =========================
@@ -687,6 +896,79 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
                       final actorData = castList[index] as Map<String, dynamic>;
                       final actor = Cast.fromJson(actorData);
                       return _CastCard(actor: actor, index: index);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  // =========================
+  //          CREW
+  // =========================
+  Widget _buildCrewSectionFromCredits(AsyncValue<Map<String, dynamic>> creditsAsync) {
+    return creditsAsync.when(
+      data: (creditsData) {
+        final crewList = creditsData['crew'] as List<dynamic>? ?? [];
+        if (crewList.isEmpty) return const SizedBox.shrink();
+
+        // Filter important crew members
+        final importantCrew = crewList.where((crew) {
+          final job = (crew['job'] as String?)?.toLowerCase() ?? '';
+          return job == 'director' || 
+                 job == 'writer' || 
+                 job == 'screenplay' || 
+                 job == 'producer' || 
+                 job == 'executive producer' ||
+                 job == 'music' ||
+                 job == 'composer' ||
+                 job == 'cinematography' ||
+                 job == 'editor';
+        }).take(10).toList();
+
+        if (importantCrew.isEmpty) return const SizedBox.shrink();
+
+        return Container(
+          color: const Color(0xFF141414), // Solid background
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(24, 16, 24, 8),
+                child: Text(
+                  'Đội ngũ sản xuất',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 100, // Increased height to prevent overflow
+                child: Scrollbar(
+                  controller: _castScrollController,
+                  thumbVisibility: true,
+                  thickness: 6,
+                  radius: const Radius.circular(10),
+                  child: ListView.builder(
+                    controller: _castScrollController,
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: importantCrew.length,
+                    itemBuilder: (context, index) {
+                      final crewData = importantCrew[index] as Map<String, dynamic>;
+                      final crew = Crew.fromJson(crewData);
+                      return _CrewCard(crew: crew, index: index);
                     },
                   ),
                 ),
@@ -828,31 +1110,6 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
     );
   }
 
-  Widget _buildVideoThumb(String videoId) {
-    return Image.network(
-      'https://img.youtube.com/vi/$videoId/maxresdefault.jpg',
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Image.network(
-        'https://img.youtube.com/vi/$videoId/hqdefault.jpg',
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          color: Colors.grey[900],
-          child: const Center(
-            child: Icon(Icons.play_circle_filled, color: Color(0xFFE50914), size: 50),
-          ),
-        ),
-      ),
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          color: Colors.grey[900],
-          child: const Center(
-            child: CircularProgressIndicator(color: Color(0xFFE50914), strokeWidth: 2),
-          ),
-        );
-      },
-    );
-  }
 
   // =========================
   //     POPUP TRAILER
@@ -943,6 +1200,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
       ),
       body: movieDetailsAsync.when(
         data: (movie) {
+          print('🔍 DEBUG: Movie overview in UI: "${movie.overview}"');
           final bottomSafe = MediaQuery.of(context).padding.bottom;
           return SingleChildScrollView(
             controller: _mainScrollController,
@@ -957,6 +1215,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
                 _buildMovieDetailsSection(movie),
                 _buildVideoSection(movieVideosAsync),
                 _buildCastSectionFromCredits(movieCreditsAsync),
+                _buildCrewSectionFromCredits(movieCreditsAsync),
                 _buildSimilarMovies(similarMoviesAsync),
                 const SizedBox(height: 16),
               ],
@@ -1072,6 +1331,156 @@ class _AnimatedButtonState extends State<_AnimatedButton> {
         ),
       ),
     );
+  }
+}
+
+// =========================
+//       CREW CARD
+// =========================
+class _CrewCard extends StatefulWidget {
+  final Crew crew;
+  final int index;
+
+  const _CrewCard({required this.crew, required this.index});
+
+  @override
+  State<_CrewCard> createState() => _CrewCardState();
+}
+
+class _CrewCardState extends State<_CrewCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (widget.index * 100)),
+      curve: Curves.easeOut,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PersonDetailScreen(personId: widget.crew.id),
+            ),
+          );
+        },
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 100,
+            margin: const EdgeInsets.only(right: 16),
+            transform: Matrix4.identity()..scale(_isHovered ? 1.05 : 1.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey[900],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: widget.crew.profilePath.isNotEmpty
+                      ? ClipOval(
+                          child: Image.network(
+                            'https://image.tmdb.org/t/p/w500${widget.crew.profilePath}',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _noPhoto(),
+                          ),
+                        )
+                      : _noPhoto(),
+                ),
+                const SizedBox(height: 4),
+                Flexible(
+                  child: Text(
+                    widget.crew.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                if (widget.crew.job.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Flexible(
+                    child: Text(
+                      _translateJob(widget.crew.job),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 8),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _noPhoto() => Container(
+        width: 50,
+        height: 50,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.grey[900],
+        ),
+        child: const Icon(Icons.person, color: Colors.grey, size: 20),
+      );
+
+  String _translateJob(String job) {
+    switch (job.toLowerCase()) {
+      case 'director':
+        return 'Đạo diễn';
+      case 'writer':
+        return 'Biên kịch';
+      case 'screenplay':
+        return 'Kịch bản';
+      case 'producer':
+        return 'Nhà sản xuất';
+      case 'executive producer':
+        return 'Giám đốc sản xuất';
+      case 'music':
+        return 'Âm nhạc';
+      case 'composer':
+        return 'Nhạc sĩ';
+      case 'cinematography':
+        return 'Quay phim';
+      case 'editor':
+        return 'Biên tập';
+      case 'costume design':
+        return 'Thiết kế trang phục';
+      case 'art direction':
+        return 'Đạo diễn nghệ thuật';
+      case 'sound':
+        return 'Âm thanh';
+      case 'visual effects':
+        return 'Hiệu ứng hình ảnh';
+      default:
+        return job;
+    }
   }
 }
 
@@ -1486,7 +1895,6 @@ class _VideoPlayerWithTranslation extends StatefulWidget {
 class _VideoPlayerWithTranslationState extends State<_VideoPlayerWithTranslation> {
   final TranslationService _translationService = TranslationService();
   bool _isTranslationEnabled = false;
-  bool _isListening = false;
 
   @override
   void initState() {
@@ -1512,16 +1920,10 @@ class _VideoPlayerWithTranslationState extends State<_VideoPlayerWithTranslation
 
   void _startListening() async {
     await _translationService.startListening();
-    setState(() {
-      _isListening = true;
-    });
   }
 
   void _stopListening() async {
     await _translationService.stopListening();
-    setState(() {
-      _isListening = false;
-    });
   }
 
   @override
