@@ -55,7 +55,8 @@ class BackendService {
       return Favorite(
         favoriteId: DateTime.now().millisecondsSinceEpoch.toString(),
         userId: '', // Will be updated by provider
-        movieId: request.movieId,
+        tmdbId: request.tmdbId,
+        mediaType: request.mediaType,
         addedAt: DateTime.now(),
       );
     } on DioException catch (e) {
@@ -63,9 +64,9 @@ class BackendService {
     }
   }
 
-  static Future<void> removeFavorite(String token, int movieId) async {
+  static Future<void> removeFavorite(String token, int tmdbId, {String mediaType = 'movie'}) async {
     try {
-      await ApiClient.backend(token: token).delete('/favorites/$movieId?mediaType=movie');
+      await ApiClient.backend(token: token).delete('/favorites/$tmdbId?mediaType=$mediaType');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -133,7 +134,9 @@ class BackendService {
       return Watchlist(
         watchlistId: DateTime.now().millisecondsSinceEpoch.toString(),
         userId: '', // Will be updated by provider
-        movieId: request.movieId,
+        tmdbId: request.tmdbId,
+        mediaType: request.mediaType,
+        note: request.note,
         addedAt: DateTime.now(),
       );
     } on DioException catch (e) {
@@ -141,9 +144,9 @@ class BackendService {
     }
   }
 
-  static Future<void> removeFromWatchlist(String token, int movieId) async {
+  static Future<void> removeFromWatchlist(String token, int tmdbId, {String mediaType = 'movie'}) async {
     try {
-      await ApiClient.backend(token: token).delete('/watchlist/$movieId?mediaType=movie');
+      await ApiClient.backend(token: token).delete('/watchlist/$tmdbId?mediaType=$mediaType');
     } on DioException catch (e) {
       throw _handleError(e);
     }

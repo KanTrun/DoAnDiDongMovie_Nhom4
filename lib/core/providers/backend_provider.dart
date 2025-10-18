@@ -64,13 +64,13 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
     }
   }
 
-  Future<void> addFavorite(int movieId) async {
+  Future<void> addFavorite(int tmdbId, {String mediaType = 'movie'}) async {
     if (!_canMakeRequest()) {
       print('DEBUG FAVORITES - Rate limiting, skipping request');
       return;
     }
     
-    print('DEBUG FAVORITES - addFavorite called for movie $movieId');
+    print('DEBUG FAVORITES - addFavorite called for $mediaType $tmdbId');
     print('DEBUG FAVORITES - Token available: ${token != null}');
     
     if (token == null) {
@@ -80,7 +80,7 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
 
     try {
       print('DEBUG FAVORITES - Creating AddFavoriteRequest');
-      final request = AddFavoriteRequest(movieId: movieId);
+      final request = AddFavoriteRequest(tmdbId: tmdbId, mediaType: mediaType);
       print('DEBUG FAVORITES - Calling BackendService.addFavorite');
       final favorite = await BackendService.addFavorite(token!, request);
       print('DEBUG FAVORITES - Successfully added favorite: ${favorite.favoriteId}');
@@ -94,7 +94,7 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
       
       // Handle 409 (Already exists) error gracefully
       if (e.toString().contains('409') || e.toString().contains('Already in favorites')) {
-        print('DEBUG FAVORITES - Movie already in favorites, refreshing list');
+        print('DEBUG FAVORITES - Item already in favorites, refreshing list');
         // Add delay to avoid race condition, then refresh
         await Future.delayed(const Duration(milliseconds: 100));
         await loadFavorites(); // Refresh the list to sync with backend
@@ -105,8 +105,8 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
     }
   }
 
-  Future<void> removeFavorite(int movieId) async {
-    print('DEBUG FAVORITES - removeFavorite called for movie $movieId');
+  Future<void> removeFavorite(int tmdbId, {String mediaType = 'movie'}) async {
+    print('DEBUG FAVORITES - removeFavorite called for $mediaType $tmdbId');
     print('DEBUG FAVORITES - Token available: ${token != null}');
     
     if (token == null) {
@@ -116,11 +116,11 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
 
     try {
       print('DEBUG FAVORITES - Calling BackendService.removeFavorite');
-      await BackendService.removeFavorite(token!, movieId);
+      await BackendService.removeFavorite(token!, tmdbId, mediaType: mediaType);
       print('DEBUG FAVORITES - Successfully removed favorite');
       
       state.whenData((favorites) {
-        final newFavorites = favorites.where((f) => f.movieId != movieId).toList();
+        final newFavorites = favorites.where((f) => f.tmdbId != tmdbId).toList();
         state = AsyncValue.data(newFavorites);
         print('DEBUG FAVORITES - Updated state with ${newFavorites.length} favorites');
       });
@@ -129,7 +129,7 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
       
       // Handle 404 (Not found) error gracefully
       if (e.toString().contains('404') || e.toString().contains('Not found')) {
-        print('DEBUG FAVORITES - Movie not in favorites, refreshing list');
+        print('DEBUG FAVORITES - Item not in favorites, refreshing list');
         // Add delay to avoid race condition, then refresh
         await Future.delayed(const Duration(milliseconds: 100));
         await loadFavorites(); // Refresh the list to sync with backend
@@ -140,19 +140,26 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
     }
   }
 
-  Future<bool> isFavorite(int movieId) async {
+  Future<bool> isFavorite(int tmdbId, {String mediaType = 'movie'}) async {
     if (token == null) return false;
     
     try {
-      return await BackendService.isFavorite(token!, movieId);
+      // Check if item exists in local state first
+      final isInLocalState = state.whenOrNull(
+        data: (favorites) => favorites.any((f) => f.tmdbId == tmdbId && (f.mediaType ?? 'movie') == mediaType),
+      ) ?? false;
+      
+      if (isInLocalState) return true;
+      
+      return await BackendService.isFavorite(token!, tmdbId);
     } catch (e) {
       return false;
     }
   }
 
-  bool isMovieInFavorites(int movieId) {
+  bool isMovieInFavorites(int tmdbId, {String mediaType = 'movie'}) {
     return state.whenOrNull(
-      data: (favorites) => favorites.any((f) => f.movieId == movieId),
+      data: (favorites) => favorites.any((f) => f.tmdbId == tmdbId && (f.mediaType ?? 'movie') == mediaType),
     ) ?? false;
   }
 }
@@ -218,13 +225,13 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
     }
   }
 
-  Future<void> addToWatchlist(int movieId) async {
+  Future<void> addToWatchlist(int tmdbId, {String mediaType = 'movie', String? note}) async {
     if (!_canMakeRequest()) {
       print('DEBUG WATCHLIST - Rate limiting, skipping request');
       return;
     }
     
-    print('DEBUG WATCHLIST - addToWatchlist called for movie $movieId');
+    print('DEBUG WATCHLIST - addToWatchlist called for $mediaType $tmdbId');
     print('DEBUG WATCHLIST - Token available: ${token != null}');
     
     if (token == null) {
@@ -234,7 +241,7 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
 
     try {
       print('DEBUG WATCHLIST - Creating AddWatchlistRequest');
-      final request = AddWatchlistRequest(movieId: movieId);
+      final request = AddWatchlistRequest(tmdbId: tmdbId, mediaType: mediaType, note: note);
       print('DEBUG WATCHLIST - Calling BackendService.addToWatchlist');
       final watchlistItem = await BackendService.addToWatchlist(token!, request);
       print('DEBUG WATCHLIST - Successfully added to watchlist: ${watchlistItem.watchlistId}');
@@ -259,8 +266,8 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
     }
   }
 
-  Future<void> removeFromWatchlist(int movieId) async {
-    print('DEBUG WATCHLIST - removeFromWatchlist called for movie $movieId');
+  Future<void> removeFromWatchlist(int tmdbId, {String mediaType = 'movie'}) async {
+    print('DEBUG WATCHLIST - removeFromWatchlist called for $mediaType $tmdbId');
     print('DEBUG WATCHLIST - Token available: ${token != null}');
     
     if (token == null) {
@@ -270,11 +277,11 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
 
     try {
       print('DEBUG WATCHLIST - Calling BackendService.removeFromWatchlist');
-      await BackendService.removeFromWatchlist(token!, movieId);
+      await BackendService.removeFromWatchlist(token!, tmdbId, mediaType: mediaType);
       print('DEBUG WATCHLIST - Successfully removed from watchlist');
       
       state.whenData((watchlist) {
-        final newWatchlist = watchlist.where((w) => w.movieId != movieId).toList();
+        final newWatchlist = watchlist.where((w) => w.tmdbId != tmdbId).toList();
         state = AsyncValue.data(newWatchlist);
         print('DEBUG WATCHLIST - Updated state with ${newWatchlist.length} items');
       });
@@ -283,7 +290,7 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
       
       // Handle 404 (Not found) error gracefully
       if (e.toString().contains('404') || e.toString().contains('Not found')) {
-        print('DEBUG WATCHLIST - Movie not in watchlist, refreshing list');
+        print('DEBUG WATCHLIST - Item not in watchlist, refreshing list');
         // Add delay to avoid race condition, then refresh
         await Future.delayed(const Duration(milliseconds: 100));
         await loadWatchlist(); // Refresh the list to sync with backend
@@ -294,19 +301,26 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
     }
   }
 
-  Future<bool> isInWatchlist(int movieId) async {
+  Future<bool> isInWatchlist(int tmdbId, {String mediaType = 'movie'}) async {
     if (token == null) return false;
     
     try {
-      return await BackendService.isInWatchlist(token!, movieId);
+      // Check if item exists in local state first
+      final isInLocalState = state.whenOrNull(
+        data: (watchlist) => watchlist.any((w) => w.tmdbId == tmdbId && (w.mediaType ?? 'movie') == mediaType),
+      ) ?? false;
+      
+      if (isInLocalState) return true;
+      
+      return await BackendService.isInWatchlist(token!, tmdbId);
     } catch (e) {
       return false;
     }
   }
 
-  bool isMovieInWatchlist(int movieId) {
+  bool isMovieInWatchlist(int tmdbId, {String mediaType = 'movie'}) {
     return state.whenOrNull(
-      data: (watchlist) => watchlist.any((w) => w.movieId == movieId),
+      data: (watchlist) => watchlist.any((w) => w.tmdbId == tmdbId && (w.mediaType ?? 'movie') == mediaType),
     ) ?? false;
   }
 }

@@ -424,7 +424,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
               builder: (context, ref, child) {
                 final favoritesAsync = ref.watch(favoritesProvider);
                 final isFavorite = favoritesAsync.when(
-                  data: (favorites) => favorites.any((fav) => fav.movieId == widget.movieId),
+                  data: (favorites) => favorites.any((fav) => fav.tmdbId == widget.movieId && (fav.mediaType ?? 'movie') == 'movie'),
                   loading: () => false,
                   error: (_, __) => false,
                 );
@@ -433,9 +433,9 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
                   child: _AnimatedButton(
                     onPressed: () {
                       if (isFavorite) {
-                        ref.read(favoritesProvider.notifier).removeFavorite(widget.movieId);
+                        ref.read(favoritesProvider.notifier).removeFavorite(widget.movieId, mediaType: 'movie');
                       } else {
-                        ref.read(favoritesProvider.notifier).addFavorite(widget.movieId);
+                        ref.read(favoritesProvider.notifier).addFavorite(widget.movieId, mediaType: 'movie');
                       }
                     },
                     icon: isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -452,7 +452,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
               builder: (context, ref, child) {
                 final watchlistAsync = ref.watch(watchlistProvider);
                 final isInWatchlist = watchlistAsync.when(
-                  data: (watchlist) => watchlist.any((item) => item.movieId == widget.movieId),
+                  data: (watchlist) => watchlist.any((item) => item.tmdbId == widget.movieId && (item.mediaType ?? 'movie') == 'movie'),
                   loading: () => false,
                   error: (_, __) => false,
                 );
@@ -461,9 +461,9 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
                   child: _AnimatedButton(
                     onPressed: () {
                       if (isInWatchlist) {
-                        ref.read(watchlistProvider.notifier).removeFromWatchlist(widget.movieId);
+                        ref.read(watchlistProvider.notifier).removeFromWatchlist(widget.movieId, mediaType: 'movie');
                       } else {
-                        ref.read(watchlistProvider.notifier).addToWatchlist(widget.movieId);
+                        ref.read(watchlistProvider.notifier).addToWatchlist(widget.movieId, mediaType: 'movie');
                       }
                     },
                     icon: isInWatchlist ? Icons.bookmark : Icons.bookmark_border,

@@ -1,13 +1,15 @@
 class Favorite {
   final String favoriteId;
   final String userId;
-  final int movieId;
+  final int tmdbId; // Changed from movieId to tmdbId to match backend
+  final String? mediaType; // 'movie' or 'tv', nullable for backward compatibility
   final DateTime addedAt;
 
   Favorite({
     required this.favoriteId,
     required this.userId,
-    required this.movieId,
+    required this.tmdbId,
+    this.mediaType,
     required this.addedAt,
   });
 
@@ -15,7 +17,8 @@ class Favorite {
     return Favorite(
       favoriteId: json['favoriteId'] ?? json['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
       userId: json['userId'] ?? '',
-      movieId: json['movieId'] ?? json['tmdbId'] ?? 0, // Backend uses tmdbId
+      tmdbId: json['tmdbId'] ?? json['movieId'] ?? 0, // Backend uses tmdbId
+      mediaType: json['mediaType'] ?? 'movie', // Default to movie for backward compatibility
       addedAt: json['addedAt'] != null 
         ? DateTime.parse(json['addedAt']) 
         : (json['createdAt'] != null 
@@ -28,22 +31,30 @@ class Favorite {
     return {
       'favoriteId': favoriteId,
       'userId': userId,
-      'movieId': movieId,
+      'tmdbId': tmdbId,
+      'mediaType': mediaType,
       'addedAt': addedAt.toIso8601String(),
     };
   }
+
+  // For backward compatibility
+  int get movieId => tmdbId;
 }
 
 class Watchlist {
   final String watchlistId;
   final String userId;
-  final int movieId;
+  final int tmdbId; // Changed from movieId to tmdbId to match backend
+  final String? mediaType; // 'movie' or 'tv', nullable for backward compatibility
+  final String? note; // Optional note field
   final DateTime addedAt;
 
   Watchlist({
     required this.watchlistId,
     required this.userId,
-    required this.movieId,
+    required this.tmdbId,
+    this.mediaType,
+    this.note,
     required this.addedAt,
   });
 
@@ -51,7 +62,9 @@ class Watchlist {
     return Watchlist(
       watchlistId: json['watchlistId'] ?? json['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
       userId: json['userId'] ?? '',
-      movieId: json['movieId'] ?? json['tmdbId'] ?? 0, // Backend uses tmdbId
+      tmdbId: json['tmdbId'] ?? json['movieId'] ?? 0, // Backend uses tmdbId
+      mediaType: json['mediaType'] ?? 'movie', // Default to movie for backward compatibility
+      note: json['note'],
       addedAt: json['addedAt'] != null 
         ? DateTime.parse(json['addedAt']) 
         : (json['createdAt'] != null 
@@ -64,10 +77,15 @@ class Watchlist {
     return {
       'watchlistId': watchlistId,
       'userId': userId,
-      'movieId': movieId,
+      'tmdbId': tmdbId,
+      'mediaType': mediaType,
+      'note': note,
       'addedAt': addedAt.toIso8601String(),
     };
   }
+
+  // For backward compatibility
+  int get movieId => tmdbId;
 }
 
 class Note {
@@ -179,27 +197,31 @@ class Rating {
 }
 
 class AddFavoriteRequest {
-  final int movieId;
+  final int tmdbId;
+  final String mediaType;
 
-  AddFavoriteRequest({required this.movieId});
+  AddFavoriteRequest({required this.tmdbId, required this.mediaType});
 
   Map<String, dynamic> toJson() {
     return {
-      'tmdbId': movieId,  // Backend expects 'tmdbId'
-      'mediaType': 'movie',  // Backend expects 'mediaType'
+      'tmdbId': tmdbId,
+      'mediaType': mediaType,
     };
   }
 }
 
 class AddWatchlistRequest {
-  final int movieId;
+  final int tmdbId;
+  final String mediaType;
+  final String? note;
 
-  AddWatchlistRequest({required this.movieId});
+  AddWatchlistRequest({required this.tmdbId, required this.mediaType, this.note});
 
   Map<String, dynamic> toJson() {
     return {
-      'tmdbId': movieId,  // Backend expects 'tmdbId'
-      'mediaType': 'movie',  // Backend expects 'mediaType'
+      'tmdbId': tmdbId,
+      'mediaType': mediaType,
+      'note': note,
     };
   }
 }

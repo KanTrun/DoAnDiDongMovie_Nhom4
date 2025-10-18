@@ -2,16 +2,27 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/backend_models.dart';
+import '../../core/models/movie.dart';
 import '../../core/providers/tmdb_provider.dart';
 import '../../core/providers/backend_provider.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/services/translation_service.dart';
+import '../../core/widgets/translatable_overview_card.dart';
 import '../movie_detail/movie_detail_screen.dart';
+import '../movie_detail/tv_show_detail_screen.dart';
 
-class FavoritesTab extends ConsumerWidget {
+class FavoritesTab extends ConsumerStatefulWidget {
   const FavoritesTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FavoritesTab> createState() => _FavoritesTabState();
+}
+
+class _FavoritesTabState extends ConsumerState<FavoritesTab> {
+  final TranslationService _translationService = TranslationService();
+
+  @override
+  Widget build(BuildContext context) {
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
     if (!isAuthenticated) {
@@ -205,6 +216,72 @@ class FavoritesTab extends ConsumerWidget {
     );
   }
 
+  // Helper methods for handling both MovieDetail and TvShowDetail
+  String _getMediaTitle(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return 'Unknown';
+    if (mediaType == 'tv') {
+      return (mediaDetail as TvShowDetail).name ?? 'Unknown Title';
+    } else {
+      return (mediaDetail as MovieDetail).title ?? 'Unknown Title';
+    }
+  }
+
+  String _getMediaYear(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return 'N/A';
+    if (mediaType == 'tv') {
+      final tvShow = mediaDetail as TvShowDetail;
+      return tvShow.firstAirDate.isNotEmpty
+          ? DateTime.parse(tvShow.firstAirDate).year.toString()
+          : 'N/A';
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.releaseDate.year.toString();
+    }
+  }
+
+  String _getMediaRating(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return '0.0';
+    if (mediaType == 'tv') {
+      final tvShow = mediaDetail as TvShowDetail;
+      return tvShow.voteAverage.toStringAsFixed(1);
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.voteAverage.toStringAsFixed(1);
+    }
+  }
+
+  String _getMediaOverview(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return '';
+    if (mediaType == 'tv') {
+      final tvShow = mediaDetail as TvShowDetail;
+      return tvShow.overview ?? '';
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.overview ?? '';
+    }
+  }
+
+  String? _getMediaOverviewVi(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return null;
+    if (mediaType == 'tv') {
+      return null; // TvShowDetail doesn't have overview_vi field yet
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.overview_vi;
+    }
+  }
+
+  String _getMediaPosterPath(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return '';
+    if (mediaType == 'tv') {
+      final tvShow = mediaDetail as TvShowDetail;
+      return tvShow.posterPath ?? '';
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.posterPath ?? '';
+    }
+  }
+
   Widget _buildNotLoggedIn(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF141414),
@@ -381,7 +458,7 @@ class FavoritesTab extends ConsumerWidget {
           itemCount: favorites.length,
           itemBuilder: (context, index) {
             final favorite = favorites[index];
-            return _buildFavoriteCard(favorite, ref);
+            return _buildFavoriteCard(favorite);
           },
         ),
         const SizedBox(height: 100),
@@ -389,15 +466,17 @@ class FavoritesTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildFavoriteCard(Favorite favorite, WidgetRef ref) {
+  Widget _buildFavoriteCard(Favorite favorite) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Consumer(
         builder: (context, ref, child) {
-          final movieDetailsAsync =
-              ref.watch(movieDetailsProvider(favorite.movieId));
+          // Use appropriate provider based on media type
+          final mediaDetailsAsync = (favorite.mediaType ?? 'movie') == 'tv'
+              ? ref.watch(tvShowDetailProvider(favorite.tmdbId))
+              : ref.watch(movieDetailsProvider(favorite.tmdbId));
 
-          return movieDetailsAsync.when(
+          return mediaDetailsAsync.when(
             loading: () => ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: BackdropFilter(
@@ -459,14 +538,23 @@ class FavoritesTab extends ConsumerWidget {
                 ),
               ),
             ),
-            data: (movieDetail) => InkWell(
+            data: (mediaDetail) => InkWell(
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        MovieDetailScreen(movieId: favorite.movieId),
-                  ),
-                );
+                if ((favorite.mediaType ?? 'movie') == 'tv') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          TvShowDetailScreen(tvShowId: favorite.tmdbId),
+                    ),
+                  );
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          MovieDetailScreen(movieId: favorite.tmdbId),
+                    ),
+                  );
+                }
               },
               borderRadius: BorderRadius.circular(12),
               child: ClipRRect(
@@ -506,9 +594,9 @@ class FavoritesTab extends ConsumerWidget {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: movieDetail.posterPath.isNotEmpty
+                            child: _getMediaPosterPath(mediaDetail, favorite.mediaType ?? 'movie').isNotEmpty
                                 ? Image.network(
-                                    'https://image.tmdb.org/t/p/w500${movieDetail.posterPath}',
+                                    'https://image.tmdb.org/t/p/w500${_getMediaPosterPath(mediaDetail, favorite.mediaType ?? 'movie')}',
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) =>
                                         Container(
@@ -532,13 +620,13 @@ class FavoritesTab extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
 
-                        // Movie info
+                        // Media info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                movieDetail.title,
+                                _getMediaTitle(mediaDetail, favorite.mediaType ?? 'movie'),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
@@ -559,7 +647,7 @@ class FavoritesTab extends ConsumerWidget {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      movieDetail.releaseDate.year.toString(),
+                                      _getMediaYear(mediaDetail, favorite.mediaType ?? 'movie'),
                                       style: TextStyle(
                                         color: Colors.grey[400],
                                         fontSize: 11,
@@ -586,8 +674,7 @@ class FavoritesTab extends ConsumerWidget {
                                             color: Colors.white, size: 10),
                                         const SizedBox(width: 2),
                                         Text(
-                                          movieDetail.voteAverage
-                                              .toStringAsFixed(1),
+                                          _getMediaRating(mediaDetail, favorite.mediaType ?? 'movie'),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 11,
@@ -600,16 +687,11 @@ class FavoritesTab extends ConsumerWidget {
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              if (movieDetail.overview.isNotEmpty)
-                                Text(
-                                  movieDetail.overview,
-                                  style: TextStyle(
-                                    color: Colors.grey[300],
-                                    fontSize: 12,
-                                    height: 1.3,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                              if (_getMediaOverview(mediaDetail, favorite.mediaType ?? 'movie').isNotEmpty)
+                                TranslatableOverviewCard(
+                                  overview: _getMediaOverview(mediaDetail, favorite.mediaType ?? 'movie'),
+                                  overviewVi: _getMediaOverviewVi(mediaDetail, favorite.mediaType ?? 'movie'),
+                                  translationService: _translationService,
                                 ),
                               const SizedBox(height: 6),
                               Row(
@@ -643,7 +725,7 @@ class FavoritesTab extends ConsumerWidget {
                             onPressed: () {
                               ref
                                   .read(favoritesProvider.notifier)
-                                  .removeFavorite(favorite.movieId);
+                                  .removeFavorite(favorite.tmdbId, mediaType: favorite.mediaType ?? 'movie');
                             },
                             icon: const Icon(
                               Icons.favorite,

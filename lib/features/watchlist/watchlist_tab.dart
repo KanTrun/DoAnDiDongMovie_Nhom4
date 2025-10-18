@@ -5,13 +5,90 @@ import '../../core/models/backend_models.dart';
 import '../../core/providers/tmdb_provider.dart';
 import '../../core/providers/backend_provider.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/models/movie.dart';
+import '../../core/services/translation_service.dart';
+import '../../core/widgets/translatable_overview_card.dart';
 import '../movie_detail/movie_detail_screen.dart';
+import '../movie_detail/tv_show_detail_screen.dart';
 
-class WatchlistTab extends ConsumerWidget {
+class WatchlistTab extends ConsumerStatefulWidget {
   const WatchlistTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WatchlistTab> createState() => _WatchlistTabState();
+}
+
+class _WatchlistTabState extends ConsumerState<WatchlistTab> {
+  final TranslationService _translationService = TranslationService();
+
+  // Helper methods to get media information
+  String _getMediaTitle(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return 'Unknown';
+    if (mediaType == 'tv') {
+      return (mediaDetail as TvShowDetail).name ?? 'Unknown Title';
+    } else {
+      return (mediaDetail as MovieDetail).title ?? 'Unknown Title';
+    }
+  }
+
+  String _getMediaYear(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return 'N/A';
+    if (mediaType == 'tv') {
+      final tvShow = mediaDetail as TvShowDetail;
+      return tvShow.firstAirDate.isNotEmpty
+          ? DateTime.parse(tvShow.firstAirDate).year.toString()
+          : 'N/A';
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.releaseDate.year.toString();
+    }
+  }
+
+  String _getMediaRating(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return '0.0';
+    if (mediaType == 'tv') {
+      final tvShow = mediaDetail as TvShowDetail;
+      return tvShow.voteAverage.toStringAsFixed(1);
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.voteAverage.toStringAsFixed(1);
+    }
+  }
+
+  String _getMediaOverview(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return '';
+    if (mediaType == 'tv') {
+      final tvShow = mediaDetail as TvShowDetail;
+      return tvShow.overview ?? '';
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.overview ?? '';
+    }
+  }
+
+  String? _getMediaOverviewVi(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return null;
+    if (mediaType == 'tv') {
+      return null; // TvShowDetail doesn't have overview_vi field yet
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.overview_vi;
+    }
+  }
+
+  String _getMediaPosterPath(dynamic mediaDetail, String mediaType) {
+    if (mediaDetail == null) return '';
+    if (mediaType == 'tv') {
+      final tvShow = mediaDetail as TvShowDetail;
+      return tvShow.posterPath ?? '';
+    } else {
+      final movie = mediaDetail as MovieDetail;
+      return movie.posterPath ?? '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
     if (!isAuthenticated) {
@@ -378,7 +455,7 @@ class WatchlistTab extends ConsumerWidget {
           itemCount: watchlist.length,
           itemBuilder: (context, index) {
             final watchlistItem = watchlist[index];
-            return _buildWatchlistCard(watchlistItem, ref);
+            return _buildWatchlistCard(watchlistItem);
           },
         ),
         const SizedBox(height: 100),
@@ -386,15 +463,17 @@ class WatchlistTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildWatchlistCard(Watchlist watchlistItem, WidgetRef ref) {
+  Widget _buildWatchlistCard(Watchlist watchlistItem) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Consumer(
         builder: (context, ref, child) {
-          final movieDetailsAsync =
-              ref.watch(movieDetailsProvider(watchlistItem.movieId));
+          // Use appropriate provider based on media type
+          final mediaDetailsAsync = (watchlistItem.mediaType ?? 'movie') == 'tv'
+              ? ref.watch(tvShowDetailProvider(watchlistItem.tmdbId))
+              : ref.watch(movieDetailsProvider(watchlistItem.tmdbId));
 
-          return movieDetailsAsync.when(
+          return mediaDetailsAsync.when(
             loading: () => ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: BackdropFilter(
@@ -456,14 +535,25 @@ class WatchlistTab extends ConsumerWidget {
                 ),
               ),
             ),
-            data: (movieDetail) => InkWell(
+            data: (mediaDetail) => InkWell(
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        MovieDetailScreen(movieId: watchlistItem.movieId),
-                  ),
-                );
+                if ((watchlistItem.mediaType ?? 'movie') == 'tv') {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => TvShowDetailScreen(
+                        tvShowId: watchlistItem.tmdbId,
+                      ),
+                    ),
+                  );
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => MovieDetailScreen(
+                        movieId: watchlistItem.tmdbId,
+                      ),
+                    ),
+                  );
+                }
               },
               borderRadius: BorderRadius.circular(12),
               child: ClipRRect(
@@ -503,9 +593,9 @@ class WatchlistTab extends ConsumerWidget {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: movieDetail.posterPath.isNotEmpty
+                            child: _getMediaPosterPath(mediaDetail, watchlistItem.mediaType ?? 'movie').isNotEmpty
                                 ? Image.network(
-                                    'https://image.tmdb.org/t/p/w500${movieDetail.posterPath}',
+                                    'https://image.tmdb.org/t/p/w500${_getMediaPosterPath(mediaDetail, watchlistItem.mediaType ?? 'movie')}',
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) =>
                                         Container(
@@ -535,7 +625,7 @@ class WatchlistTab extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                movieDetail.title,
+                                _getMediaTitle(mediaDetail, watchlistItem.mediaType ?? 'movie'),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 15,
@@ -556,7 +646,7 @@ class WatchlistTab extends ConsumerWidget {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      movieDetail.releaseDate.year.toString(),
+                                      _getMediaYear(mediaDetail, watchlistItem.mediaType ?? 'movie'),
                                       style: TextStyle(
                                         color: Colors.grey[400],
                                         fontSize: 11,
@@ -583,8 +673,7 @@ class WatchlistTab extends ConsumerWidget {
                                             color: Colors.white, size: 10),
                                         const SizedBox(width: 2),
                                         Text(
-                                          movieDetail.voteAverage
-                                              .toStringAsFixed(1),
+                                          _getMediaRating(mediaDetail, watchlistItem.mediaType ?? 'movie'),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 11,
@@ -597,16 +686,11 @@ class WatchlistTab extends ConsumerWidget {
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              if (movieDetail.overview.isNotEmpty)
-                                Text(
-                                  movieDetail.overview,
-                                  style: TextStyle(
-                                    color: Colors.grey[300],
-                                    fontSize: 12,
-                                    height: 1.3,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                              if (_getMediaOverview(mediaDetail, watchlistItem.mediaType ?? 'movie').isNotEmpty)
+                                TranslatableOverviewCard(
+                                  overview: _getMediaOverview(mediaDetail, watchlistItem.mediaType ?? 'movie'),
+                                  overviewVi: _getMediaOverviewVi(mediaDetail, watchlistItem.mediaType ?? 'movie'),
+                                  translationService: _translationService,
                                 ),
                               const SizedBox(height: 6),
                               Row(
@@ -640,7 +724,7 @@ class WatchlistTab extends ConsumerWidget {
                             onPressed: () {
                               ref
                                   .read(watchlistProvider.notifier)
-                                  .removeFromWatchlist(watchlistItem.movieId);
+                                  .removeFromWatchlist(watchlistItem.tmdbId, mediaType: watchlistItem.mediaType ?? 'movie');
                             },
                             icon: const Icon(
                               Icons.bookmark,

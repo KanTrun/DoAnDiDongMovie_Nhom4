@@ -533,7 +533,7 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
               builder: (context, ref, child) {
                 final favoritesAsync = ref.watch(favoritesProvider);
                 final isFavorite = favoritesAsync.when(
-                  data: (favorites) => favorites.any((fav) => fav.movieId == widget.tvShowId),
+                  data: (favorites) => favorites.any((fav) => fav.tmdbId == widget.tvShowId && (fav.mediaType ?? 'movie') == 'tv'),
                   loading: () => false,
                   error: (_, __) => false,
                 );
@@ -542,9 +542,9 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
                   child: _AnimatedButton(
                     onPressed: () {
                       if (isFavorite) {
-                        ref.read(favoritesProvider.notifier).removeFavorite(widget.tvShowId);
+                        ref.read(favoritesProvider.notifier).removeFavorite(widget.tvShowId, mediaType: 'tv');
                       } else {
-                        ref.read(favoritesProvider.notifier).addFavorite(widget.tvShowId);
+                        ref.read(favoritesProvider.notifier).addFavorite(widget.tvShowId, mediaType: 'tv');
                       }
                     },
                     icon: isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -561,7 +561,7 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
               builder: (context, ref, child) {
                 final watchlistAsync = ref.watch(watchlistProvider);
                 final isInWatchlist = watchlistAsync.when(
-                  data: (watchlist) => watchlist.any((item) => item.movieId == widget.tvShowId),
+                  data: (watchlist) => watchlist.any((item) => item.tmdbId == widget.tvShowId && (item.mediaType ?? 'movie') == 'tv'),
                   loading: () => false,
                   error: (_, __) => false,
                 );
@@ -570,9 +570,9 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
                   child: _AnimatedButton(
                     onPressed: () {
                       if (isInWatchlist) {
-                        ref.read(watchlistProvider.notifier).removeFromWatchlist(widget.tvShowId);
+                        ref.read(watchlistProvider.notifier).removeFromWatchlist(widget.tvShowId, mediaType: 'tv');
                       } else {
-                        ref.read(watchlistProvider.notifier).addToWatchlist(widget.tvShowId);
+                        ref.read(watchlistProvider.notifier).addToWatchlist(widget.tvShowId, mediaType: 'tv');
                       }
                     },
                     icon: isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
@@ -640,8 +640,8 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
             if (tvShow.productionCountries.isNotEmpty)
               _buildInfoRow('Quốc gia sản xuất', tvShow.productionCountries.join(', ')),
           ],
-        ),
-      );
+      ),
+    );
   }
 
   Widget _buildInfoRow(String label, String value) {
