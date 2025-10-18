@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../models/movie.dart';
 import '../network/api_client.dart';
 import 'translation_service.dart';
+import 'package:translator/translator.dart';
 
 class TmdbService {
   // Discover Movies
@@ -224,32 +225,89 @@ class TmdbService {
       
       bool pageHasResults = false;
       
-      // Search Movies
+      // Search Movies - Get Vietnamese titles and English overviews
       try {
-        final queryParams = {
+        // First get Vietnamese titles
+        final viQueryParams = {
           'query': query,
           'page': currentPage,
           'include_adult': false,
           'include_video': false,
-          'language': 'en-US', // Get English first to ensure we have overviews
+          'language': 'vi-VN', // Get Vietnamese titles
         };
-        print('🔍 API CALL: Searching movies with query="$query", page=$currentPage, language=en-US');
-        print('🔍 API URL: /search/movie with params: $queryParams');
+        print('🔍 API CALL: Searching movies with query="$query", page=$currentPage, language=vi-VN');
         
-        final movieResponse = await ApiClient.tmdb().get(
+        final viMovieResponse = await ApiClient.tmdb().get(
           '/search/movie',
-          queryParameters: queryParams,
+          queryParameters: viQueryParams,
         );
-        print('🔍 API RESPONSE: Got ${movieResponse.data['results']?.length ?? 0} results');
+        print('🔍 VI API RESPONSE: Got ${viMovieResponse.data['results']?.length ?? 0} results');
         
-        // Debug: Print raw API response for first few movies
-        final results = movieResponse.data['results'] as List<dynamic>? ?? [];
-        for (int i = 0; i < results.length && i < 3; i++) {
-          final movieData = results[i] as Map<String, dynamic>;
-          print('🔍 RAW API Movie $i: "${movieData['title']}" - Overview: "${movieData['overview']}"');
+        // Debug: Print Vietnamese API response for first few movies
+        final viResults = viMovieResponse.data['results'] as List<dynamic>? ?? [];
+        for (int i = 0; i < viResults.length && i < 3; i++) {
+          final movieData = viResults[i] as Map<String, dynamic>;
+          print('🔍 RAW VI API Movie $i: Title="${movieData['title']}", Original Title="${movieData['original_title']}"');
         }
         
-        final movieResults = MovieResponse.fromJson(movieResponse.data, mediaType: 'movie');
+        // Then get English overviews
+        final enQueryParams = {
+          'query': query,
+          'page': currentPage,
+          'include_adult': false,
+          'include_video': false,
+          'language': 'en-US', // Get English overviews
+        };
+        print('🔍 API CALL: Searching movies with query="$query", page=$currentPage, language=en-US');
+        
+        final enMovieResponse = await ApiClient.tmdb().get(
+          '/search/movie',
+          queryParameters: enQueryParams,
+        );
+        print('🔍 EN API RESPONSE: Got ${enMovieResponse.data['results']?.length ?? 0} results');
+        
+        // Merge Vietnamese titles with English overviews
+        final enResults = enMovieResponse.data['results'] as List<dynamic>? ?? [];
+        
+        // Create a map of English results by ID for quick lookup
+        final enResultsMap = <int, Map<String, dynamic>>{};
+        for (final enMovie in enResults) {
+          final movieData = enMovie as Map<String, dynamic>;
+          enResultsMap[movieData['id']] = movieData;
+        }
+        
+        // Combine Vietnamese titles with English overviews
+        final combinedResults = <Map<String, dynamic>>[];
+        for (final viMovie in viResults) {
+          final movieData = Map<String, dynamic>.from(viMovie as Map<String, dynamic>);
+          final movieId = movieData['id'];
+          
+          // Get English overview if available
+          if (enResultsMap.containsKey(movieId)) {
+            final enMovie = enResultsMap[movieId]!;
+            movieData['overview_en'] = enMovie['overview'] ?? '';
+            movieData['title_en'] = enMovie['title'] ?? '';
+          }
+          
+          combinedResults.add(movieData);
+        }
+        
+        // Debug: Print combined results
+        for (int i = 0; i < combinedResults.length && i < 3; i++) {
+          final movieData = combinedResults[i];
+          print('🔍 COMBINED Movie $i: VI Title="${movieData['title']}", EN Title="${movieData['title_en']}", EN Overview="${movieData['overview_en']}"');
+          print('🔍 RAW VI Data: ${movieData}');
+        }
+        
+        // Create fake response data with combined results
+        final fakeResponseData = {
+          'page': viMovieResponse.data['page'],
+          'results': combinedResults,
+          'total_pages': viMovieResponse.data['total_pages'],
+          'total_results': viMovieResponse.data['total_results'],
+        };
+        
+        final movieResults = MovieResponse.fromJson(fakeResponseData, mediaType: 'movie');
         
         if (movieResults.results.isNotEmpty) {
           pageHasResults = true;
@@ -266,14 +324,39 @@ class TmdbService {
               // Debug: Check what we got from API
               print('🔍 DEBUG API: Movie "${movie.title}" - Original overview from API: "${movie.overview}"');
               
-              // Always ensure Vietnamese overview
-              String vietnameseOverview = await _ensureVietnameseOverview(movie.title, movie.overview, 'movie');
+              // Get English overview from the combined data
+              String englishOverview = '';
+              final combinedData = combinedResults.firstWhere(
+                (data) => data['id'] == movie.id,
+                orElse: () => {},
+              );
+              if (combinedData.isNotEmpty) {
+                englishOverview = combinedData['overview_en'] ?? '';
+                print('🔍 DEBUG API: Movie "${movie.title}" - English overview: "$englishOverview"');
+              }
+              
+              // Always ensure Vietnamese overview using English overview
+              String vietnameseOverview = await _ensureVietnameseOverview(movie.title, englishOverview.isNotEmpty ? englishOverview : movie.overview, 'movie');
               print('🔍 DEBUG: Movie "${movie.title}" - Final Vietnamese overview: "$vietnameseOverview"');
+              
+              // Check if title needs translation (if it's in English/Japanese/Chinese, translate to Vietnamese)
+              String finalTitle = movie.title;
+              if (_needsTitleTranslation(movie.title)) {
+                try {
+                  final titleTranslation = await _translateTitle(movie.title);
+                  if (titleTranslation.isNotEmpty && titleTranslation != movie.title) {
+                    finalTitle = titleTranslation;
+                    print('🔍 DEBUG: Title translated from "${movie.title}" to "$finalTitle"');
+                  }
+                } catch (e) {
+                  print('❌ Title translation failed: $e');
+                }
+              }
               
               final movieWithType = Movie(
                 id: movie.id,
-                title: movie.title,
-                overview: movie.overview, // Keep original overview
+                title: finalTitle, // Vietnamese title (translated if needed)
+                overview: englishOverview.isNotEmpty ? englishOverview : movie.overview, // English overview for translation
                 posterPath: movie.posterPath,
                 backdropPath: movie.backdropPath,
                 releaseDate: movie.releaseDate,
@@ -299,19 +382,42 @@ class TmdbService {
         // Movie search failed, continue with next page
       }
       
-      // Search TV Shows
+      // Search TV Shows - Get Vietnamese titles and English overviews
       try {
-        final tvResponse = await ApiClient.tmdb().get(
+        // First get Vietnamese titles
+        final viTvResponse = await ApiClient.tmdb().get(
           '/search/tv',
           queryParameters: {
             'query': query,
             'page': currentPage,
             'include_adult': false,
-            'language': 'en-US', // Get English first to ensure we have overviews
+            'language': 'vi-VN', // Get Vietnamese titles
           },
         );
         
-        final tvResults = tvResponse.data['results'] as List<dynamic>? ?? [];
+        // Then get English overviews
+        final enTvResponse = await ApiClient.tmdb().get(
+          '/search/tv',
+          queryParameters: {
+            'query': query,
+            'page': currentPage,
+            'include_adult': false,
+            'language': 'en-US', // Get English overviews
+          },
+        );
+        
+        // Merge Vietnamese titles with English overviews
+        final viTvResults = viTvResponse.data['results'] as List<dynamic>? ?? [];
+        final enTvResults = enTvResponse.data['results'] as List<dynamic>? ?? [];
+        
+        // Create a map of English results by ID for quick lookup
+        final enTvResultsMap = <int, Map<String, dynamic>>{};
+        for (final enTv in enTvResults) {
+          final tvData = enTv as Map<String, dynamic>;
+          enTvResultsMap[tvData['id']] = tvData;
+        }
+        
+        final tvResults = viTvResults;
         
         if (tvResults.isNotEmpty) {
           pageHasResults = true;
@@ -332,14 +438,37 @@ class TmdbService {
             print('📺 TV Show: ${tv['name']} - Overview: "${overview}"');
             print('🔍 DEBUG API: TV Show "${tv['name']}" - Original overview from API: "$overview"');
             
-            // Always ensure Vietnamese overview for TV shows
-            String finalOverview = await _ensureVietnameseOverview(tv['name'] ?? '', overview, 'tv');
+            // Get English overview from the combined data
+            String englishOverview = '';
+            final tvId = tv['id'];
+            if (enTvResultsMap.containsKey(tvId)) {
+              final enTv = enTvResultsMap[tvId]!;
+              englishOverview = enTv['overview'] ?? '';
+              print('🔍 DEBUG API: TV Show "${tv['name']}" - English overview: "$englishOverview"');
+            }
+            
+            // Always ensure Vietnamese overview for TV shows using English overview
+            String finalOverview = await _ensureVietnameseOverview(tv['name'] ?? '', englishOverview.isNotEmpty ? englishOverview : overview, 'tv');
             print('🔍 DEBUG: TV Show "${tv['name']}" - Final Vietnamese overview: "$finalOverview"');
+            
+            // Check if title needs translation (if it's in English/Japanese/Chinese, translate to Vietnamese)
+            String finalTitle = tv['name'] ?? '';
+            if (_needsTitleTranslation(finalTitle)) {
+              try {
+                final titleTranslation = await _translateTitle(finalTitle);
+                if (titleTranslation.isNotEmpty && titleTranslation != finalTitle) {
+                  finalTitle = titleTranslation;
+                  print('🔍 DEBUG: TV Title translated from "${tv['name']}" to "$finalTitle"');
+                }
+              } catch (e) {
+                print('❌ TV Title translation failed: $e');
+              }
+            }
             
             final movie = Movie(
               id: tv['id'] ?? 0,
-              title: tv['name'] ?? tv['original_name'] ?? '',
-              overview: overview, // Keep original overview
+              title: finalTitle, // Vietnamese title (translated if needed)
+              overview: englishOverview.isNotEmpty ? englishOverview : overview, // English overview for translation
               posterPath: tv['poster_path'],
               backdropPath: tv['backdrop_path'],
               releaseDate: releaseDate,
@@ -1018,5 +1147,42 @@ class TmdbService {
     }
     
     return '';
+  }
+
+  // Check if text contains Vietnamese characters
+  static bool _containsVietnameseCharacters(String text) {
+    // Vietnamese Unicode ranges
+    final vietnamesePattern = RegExp(r'[\u00C0-\u024F\u1E00-\u1EFF\u0100-\u017F\u0180-\u024F]');
+    return vietnamesePattern.hasMatch(text);
+  }
+
+  // Check if title needs translation (contains English, Japanese, Chinese characters)
+  static bool _needsTitleTranslation(String title) {
+    // If already contains Vietnamese characters, don't translate
+    if (_containsVietnameseCharacters(title)) {
+      return false;
+    }
+    
+    // Check for English, Japanese, Chinese characters
+    final needsTranslationPattern = RegExp(r'[a-zA-Z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]');
+    return needsTranslationPattern.hasMatch(title);
+  }
+
+  // Translate title to Vietnamese
+  static Future<String> _translateTitle(String title) async {
+    try {
+      final translator = GoogleTranslator();
+      final translation = await translator.translate(title, from: 'auto', to: 'vi');
+      
+      if (translation.text.isNotEmpty && translation.text != title) {
+        print('✅ Title translation success: "${title}" -> "${translation.text}"');
+        return translation.text;
+      }
+      
+      return title; // Return original if translation failed
+    } catch (e) {
+      print('❌ Title translation error: $e');
+      return title;
+    }
   }
 }
