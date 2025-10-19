@@ -22,6 +22,44 @@ namespace MoviePlusApi.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("MoviePlusApi.Models.CommentReaction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CommentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<byte>("Type")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("CommentId", "UserId", "Type")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_CommentReactions");
+
+                    b.ToTable("CommentReactions", t =>
+                        {
+                            t.HasCheckConstraint("CK_CommentReaction_Type", "Type = 1");
+                        });
+                });
+
             modelBuilder.Entity("MoviePlusApi.Models.Favorite", b =>
                 {
                     b.Property<long>("Id")
@@ -149,6 +187,203 @@ namespace MoviePlusApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MoviePlusApi.Models.Notification", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Payload")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("RefId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead", "CreatedAt")
+                        .HasDatabaseName("IX_Notifications_User");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.Post", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("CommentCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("LikeCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("MediaType")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PosterPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("TmdbId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("Visibility")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .HasDatabaseName("IX_Posts_ByUser");
+
+                    b.HasIndex("Visibility", "CreatedAt")
+                        .HasDatabaseName("IX_Posts_Public_Feed");
+
+                    b.HasIndex("TmdbId", "MediaType", "Visibility", "CreatedAt")
+                        .HasDatabaseName("IX_Posts_ByMovie");
+
+                    b.ToTable("Posts", t =>
+                        {
+                            t.HasCheckConstraint("CK_Post_Media", "MediaType IN ('movie','tv') OR MediaType IS NULL");
+
+                            t.HasCheckConstraint("CK_Post_Visibility", "Visibility IN (0,1,2)");
+                        });
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.PostComment", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("LikeCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<long?>("ParentCommentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("PostId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentCommentId");
+
+                    b.HasIndex("PostId", "CreatedAt")
+                        .HasDatabaseName("IX_PostComments_Post");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .HasDatabaseName("IX_PostComments_User");
+
+                    b.ToTable("PostComments");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.PostReaction", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<long>("PostId")
+                        .HasColumnType("bigint");
+
+                    b.Property<byte>("Type")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("PostId", "UserId", "Type")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_PostReactions");
+
+                    b.ToTable("PostReactions", t =>
+                        {
+                            t.HasCheckConstraint("CK_PostReaction_Type", "Type = 1");
+                        });
+                });
+
             modelBuilder.Entity("MoviePlusApi.Models.Rating", b =>
                 {
                     b.Property<long>("Id")
@@ -240,6 +475,36 @@ namespace MoviePlusApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MoviePlusApi.Models.UserFollow", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<Guid>("FolloweeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FollowerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FolloweeId");
+
+                    b.HasIndex("FollowerId", "FolloweeId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_UserFollows");
+
+                    b.ToTable("UserFollows");
+                });
+
             modelBuilder.Entity("MoviePlusApi.Models.Watchlist", b =>
                 {
                     b.Property<long>("Id")
@@ -279,6 +544,25 @@ namespace MoviePlusApi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MoviePlusApi.Models.CommentReaction", b =>
+                {
+                    b.HasOne("MoviePlusApi.Models.PostComment", "PostComment")
+                        .WithMany("CommentReactions")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", "User")
+                        .WithMany("CommentReactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("PostComment");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("MoviePlusApi.Models.Favorite", b =>
                 {
                     b.HasOne("MoviePlusApi.Models.User", "User")
@@ -312,6 +596,73 @@ namespace MoviePlusApi.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MoviePlusApi.Models.Notification", b =>
+                {
+                    b.HasOne("MoviePlusApi.Models.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.Post", b =>
+                {
+                    b.HasOne("MoviePlusApi.Models.User", "User")
+                        .WithMany("Posts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.PostComment", b =>
+                {
+                    b.HasOne("MoviePlusApi.Models.PostComment", "ParentComment")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MoviePlusApi.Models.Post", "Post")
+                        .WithMany("PostComments")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", "User")
+                        .WithMany("PostComments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ParentComment");
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.PostReaction", b =>
+                {
+                    b.HasOne("MoviePlusApi.Models.Post", "Post")
+                        .WithMany("PostReactions")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", "User")
+                        .WithMany("PostReactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("MoviePlusApi.Models.Rating", b =>
                 {
                     b.HasOne("MoviePlusApi.Models.User", "User")
@@ -321,6 +672,25 @@ namespace MoviePlusApi.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.UserFollow", b =>
+                {
+                    b.HasOne("MoviePlusApi.Models.User", "Followee")
+                        .WithMany("Followers")
+                        .HasForeignKey("FolloweeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", "Follower")
+                        .WithMany("Following")
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Followee");
+
+                    b.Navigation("Follower");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Watchlist", b =>
@@ -334,13 +704,41 @@ namespace MoviePlusApi.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("MoviePlusApi.Models.Post", b =>
+                {
+                    b.Navigation("PostComments");
+
+                    b.Navigation("PostReactions");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.PostComment", b =>
+                {
+                    b.Navigation("CommentReactions");
+
+                    b.Navigation("Replies");
+                });
+
             modelBuilder.Entity("MoviePlusApi.Models.User", b =>
                 {
+                    b.Navigation("CommentReactions");
+
                     b.Navigation("Favorites");
+
+                    b.Navigation("Followers");
+
+                    b.Navigation("Following");
 
                     b.Navigation("Histories");
 
                     b.Navigation("Notes");
+
+                    b.Navigation("Notifications");
+
+                    b.Navigation("PostComments");
+
+                    b.Navigation("PostReactions");
+
+                    b.Navigation("Posts");
 
                     b.Navigation("Ratings");
 

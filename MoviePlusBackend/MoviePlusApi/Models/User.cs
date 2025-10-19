@@ -34,5 +34,14 @@ namespace MoviePlusApi.Models
         public virtual ICollection<Note> Notes { get; set; } = new List<Note>();
         public virtual ICollection<History> Histories { get; set; } = new List<History>();
         public virtual ICollection<Rating> Ratings { get; set; } = new List<Rating>();
+        
+        // Community features
+        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+        public virtual ICollection<PostReaction> PostReactions { get; set; } = new List<PostReaction>();
+        public virtual ICollection<PostComment> PostComments { get; set; } = new List<PostComment>();
+        public virtual ICollection<CommentReaction> CommentReactions { get; set; } = new List<CommentReaction>();
+        public virtual ICollection<UserFollow> Following { get; set; } = new List<UserFollow>(); // Users this user follows
+        public virtual ICollection<UserFollow> Followers { get; set; } = new List<UserFollow>(); // Users who follow this user
+        public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }

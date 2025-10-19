@@ -13,6 +13,7 @@ import 'history_tab.dart';
 import '../../core/providers/notes_provider.dart' as notes_providers;
 import '../../core/providers/ratings_provider.dart' as ratings_providers;
 import '../../core/providers/history_provider.dart' as history_providers;
+import '../../core/providers/community_provider.dart';
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -314,6 +315,52 @@ class ProfileTab extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Container(), // Empty space for alignment
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                title: 'Đang theo dõi',
+                count: ref.watch(followStatsProvider).when(
+                  data: (stats) => stats['following'] ?? 0,
+                  loading: () => 0,
+                  error: (_, __) => 0,
+                ),
+                color: Colors.green,
+                onTap: () {
+                  // TODO: Navigate to following list
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Danh sách đang theo dõi'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                title: 'Người theo dõi',
+                count: ref.watch(followStatsProvider).when(
+                  data: (stats) => stats['followers'] ?? 0,
+                  loading: () => 0,
+                  error: (_, __) => 0,
+                ),
+                color: Colors.teal,
+                onTap: () {
+                  // TODO: Navigate to followers list
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Danh sách người theo dõi'),
+                      backgroundColor: Colors.teal,
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),

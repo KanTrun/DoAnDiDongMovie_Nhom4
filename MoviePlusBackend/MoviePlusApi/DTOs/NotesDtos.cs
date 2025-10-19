@@ -44,3 +44,4 @@ namespace MoviePlusApi.DTOs
         public int TotalPages { get; set; }
     }
 }
+

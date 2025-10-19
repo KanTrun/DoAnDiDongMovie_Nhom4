@@ -15,6 +15,14 @@ namespace MoviePlusApi.Data
         public DbSet<Note> Notes { get; set; }
         public DbSet<History> Histories { get; set; }
         public DbSet<Rating> Ratings { get; set; }
+        
+        // Community features
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<PostReaction> PostReactions { get; set; }
+        public DbSet<PostComment> PostComments { get; set; }
+        public DbSet<CommentReaction> CommentReactions { get; set; }
+        public DbSet<UserFollow> UserFollows { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -110,6 +118,138 @@ namespace MoviePlusApi.Data
                 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Ratings)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Post configuration
+            modelBuilder.Entity<Post>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Visibility).HasDefaultValue(1);
+                entity.Property(e => e.LikeCount).HasDefaultValue(0);
+                entity.Property(e => e.CommentCount).HasDefaultValue(0);
+                entity.Property(e => e.Title).HasMaxLength(200);
+                entity.Property(e => e.MediaType).HasMaxLength(20);
+                entity.HasCheckConstraint("CK_Post_Visibility", "Visibility IN (0,1,2)");
+                entity.HasCheckConstraint("CK_Post_Media", "MediaType IN ('movie','tv') OR MediaType IS NULL");
+                
+                // Indexes for performance
+                entity.HasIndex(e => new { e.Visibility, e.CreatedAt }).HasDatabaseName("IX_Posts_Public_Feed");
+                entity.HasIndex(e => new { e.TmdbId, e.MediaType, e.Visibility, e.CreatedAt }).HasDatabaseName("IX_Posts_ByMovie");
+                entity.HasIndex(e => new { e.UserId, e.CreatedAt }).HasDatabaseName("IX_Posts_ByUser");
+                
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.Posts)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // PostReaction configuration
+            modelBuilder.Entity<PostReaction>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Type).HasDefaultValue(1);
+                entity.HasCheckConstraint("CK_PostReaction_Type", "Type = 1"); // Only like for now
+                
+                // Unique constraint to prevent duplicate reactions
+                entity.HasIndex(e => new { e.PostId, e.UserId, e.Type }).IsUnique().HasDatabaseName("UQ_PostReactions");
+                
+                entity.HasOne(e => e.Post)
+                    .WithMany(p => p.PostReactions)
+                    .HasForeignKey(e => e.PostId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                    
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.PostReactions)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // PostComment configuration
+            modelBuilder.Entity<PostComment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.LikeCount).HasDefaultValue(0);
+                
+                // Indexes for performance
+                entity.HasIndex(e => new { e.PostId, e.CreatedAt }).HasDatabaseName("IX_PostComments_Post");
+                entity.HasIndex(e => new { e.UserId, e.CreatedAt }).HasDatabaseName("IX_PostComments_User");
+                
+                entity.HasOne(e => e.Post)
+                    .WithMany(p => p.PostComments)
+                    .HasForeignKey(e => e.PostId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                    
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.PostComments)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                    
+                entity.HasOne(e => e.ParentComment)
+                    .WithMany(c => c.Replies)
+                    .HasForeignKey(e => e.ParentCommentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // CommentReaction configuration
+            modelBuilder.Entity<CommentReaction>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Type).HasDefaultValue(1);
+                entity.HasCheckConstraint("CK_CommentReaction_Type", "Type = 1"); // Only like for now
+                
+                // Unique constraint to prevent duplicate reactions
+                entity.HasIndex(e => new { e.CommentId, e.UserId, e.Type }).IsUnique().HasDatabaseName("UQ_CommentReactions");
+                
+                entity.HasOne(e => e.PostComment)
+                    .WithMany(c => c.CommentReactions)
+                    .HasForeignKey(e => e.CommentId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                    
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.CommentReactions)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // UserFollow configuration
+            modelBuilder.Entity<UserFollow>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                
+                // Unique constraint to prevent duplicate follows
+                entity.HasIndex(e => new { e.FollowerId, e.FolloweeId }).IsUnique().HasDatabaseName("UQ_UserFollows");
+                
+                entity.HasOne(e => e.Follower)
+                    .WithMany(u => u.Following)
+                    .HasForeignKey(e => e.FollowerId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                    
+                entity.HasOne(e => e.Followee)
+                    .WithMany(u => u.Followers)
+                    .HasForeignKey(e => e.FolloweeId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // Notification configuration
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.IsRead).HasDefaultValue(false);
+                entity.Property(e => e.Type).HasMaxLength(30).IsRequired();
+                
+                // Indexes for performance
+                entity.HasIndex(e => new { e.UserId, e.IsRead, e.CreatedAt }).HasDatabaseName("IX_Notifications_User");
+                
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.Notifications)
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
