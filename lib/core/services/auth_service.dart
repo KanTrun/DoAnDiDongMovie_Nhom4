@@ -3,7 +3,7 @@ import '../models/user.dart';
 import '../network/api_client.dart';
 
 class AuthService {
-  static const String _baseUrl = '/auth';
+  static const String _baseUrl = '/api/auth';
 
   static Future<AuthResponse> login(LoginRequest request) async {
     try {

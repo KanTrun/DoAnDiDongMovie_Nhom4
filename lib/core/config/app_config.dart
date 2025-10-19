@@ -6,7 +6,7 @@ class AppConfig {
   
   static const String backendBaseUrl = String.fromEnvironment(
     'BACKEND_BASE_URL',
-    defaultValue: 'http://localhost:5127/api',
+    defaultValue: 'http://localhost:5127',
   );
   
   static const String tmdbLanguage = String.fromEnvironment(

@@ -7,6 +7,10 @@ import '../favorites/favorites_tab.dart';
 import '../watchlist/watchlist_tab.dart';
 import '../admin/admin_dashboard_screen.dart';
 import 'settings_tab.dart';
+import 'notes_tab.dart';
+import 'ratings_tab.dart';
+import '../../core/providers/notes_provider.dart' as notes_providers;
+import '../../core/providers/ratings_provider.dart' as ratings_providers;
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -260,15 +264,12 @@ class ProfileTab extends ConsumerWidget {
             Expanded(
               child: _buildStatCard(
                 title: 'Ghi chú',
-                count: ref.watch(notesProvider).maybeWhen(
-                  data: (notes) => notes.length,
-                  orElse: () => 0,
-                ),
+                count: ref.watch(notes_providers.notesProvider).notes.length,
                 color: Colors.orange,
                 onTap: () {
-                  // TODO: Navigate to notes tab
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Tính năng ghi chú đang phát triển')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NotesTab()),
                   );
                 },
               ),
@@ -277,15 +278,12 @@ class ProfileTab extends ConsumerWidget {
             Expanded(
               child: _buildStatCard(
                 title: 'Đánh giá',
-                count: ref.watch(ratingsProvider).maybeWhen(
-                  data: (ratings) => ratings.length,
-                  orElse: () => 0,
-                ),
+                count: ref.watch(ratings_providers.ratingsProvider).ratings.length,
                 color: Colors.yellow,
                 onTap: () {
-                  // TODO: Navigate to ratings tab
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Tính năng đánh giá đang phát triển')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RatingsTab()),
                   );
                 },
               ),

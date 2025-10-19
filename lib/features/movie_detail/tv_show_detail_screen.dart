@@ -8,6 +8,8 @@ import '../../core/providers/backend_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/models/movie.dart';
 import '../person/person_detail_screen.dart';
+import 'widgets/notes_section.dart';
+import 'widgets/rating_section.dart';
 
 class TvShowDetailScreen extends ConsumerStatefulWidget {
   final int tvShowId;
@@ -111,6 +113,10 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
         ref.watch(similarTvShowsProvider(widget.tvShowId));
     final authAsync = ref.watch(authProvider);
     final isAuthenticated = authAsync.isAuthenticated;
+    
+    print('🔍 AUTH DEBUG - isAuthenticated: $isAuthenticated');
+    print('🔍 AUTH DEBUG - user: ${authAsync.user?.email}');
+    print('🔍 AUTH DEBUG - token: ${authAsync.token != null ? "Present" : "NULL"}');
 
     return Scaffold(
       backgroundColor: const Color(0xFF141414),
@@ -160,6 +166,23 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
                 _buildActionButtons(tvShow, isAuthenticated),
                 _buildOverview(tvShow.overview),
                 _buildTvShowInfo(tvShow),
+                // Temporarily show notes/ratings even when not authenticated for debugging
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: NotesSection(
+                    tmdbId: widget.tvShowId,
+                    mediaType: 'tv',
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: RatingSection(
+                    tmdbId: widget.tvShowId,
+                    mediaType: 'tv',
+                  ),
+                ),
                 _buildVideoSection(tvShowVideosAsync),
                 _buildCastSectionFromCredits(tvShowCreditsAsync),
                 _buildCrewSectionFromCredits(tvShowCreditsAsync),

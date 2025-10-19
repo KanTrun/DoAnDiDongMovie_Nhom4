@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/models/movie.dart';
 import '../../core/providers/tmdb_provider.dart';
 import '../../core/services/translation_service.dart';
@@ -580,17 +581,9 @@ class _SearchTabState extends ConsumerState<SearchTab>
       onTap: () {
         // Navigate based on mediaType
         if (movie.mediaType == 'tv') {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => TvShowDetailScreen(tvShowId: movie.id),
-            ),
-          );
+          context.go('/tv/${movie.id}');
         } else {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => MovieDetailScreen(movieId: movie.id),
-            ),
-          );
+          context.go('/movie/${movie.id}');
         }
       },
       child: Container(
@@ -901,17 +894,9 @@ class _SearchTabState extends ConsumerState<SearchTab>
           final mediaType = movie.mediaType ?? 'movie';
           
           if (mediaType == 'tv') {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => TvShowDetailScreen(tvShowId: movie.id),
-              ),
-            );
+            context.go('/tv/${movie.id}');
           } else {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => MovieDetailScreen(movieId: movie.id),
-              ),
-            );
+            context.go('/movie/${movie.id}');
           }
         },
             borderRadius: BorderRadius.circular(10),

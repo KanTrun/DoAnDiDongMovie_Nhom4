@@ -63,8 +63,10 @@ namespace MoviePlusApi.Data
             modelBuilder.Entity<Note>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.HasIndex(e => new { e.UserId, e.TmdbId, e.MediaType }).IsUnique();
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.HasIndex(e => new { e.UserId, e.TmdbId, e.MediaType });
+                entity.HasIndex(e => new { e.UserId, e.CreatedAt }).HasDatabaseName("IX_Notes_UserId_CreatedAt");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Content).IsRequired();
                 entity.HasCheckConstraint("CK_Notes_Media", "MediaType IN ('movie','tv')");
                 
                 entity.HasOne(e => e.User)
@@ -93,8 +95,9 @@ namespace MoviePlusApi.Data
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => new { e.UserId, e.TmdbId, e.MediaType }).IsUnique();
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Score).HasColumnType("decimal(3,1)");
                 entity.HasCheckConstraint("CK_Rate_Media", "MediaType IN ('movie','tv')");
-                entity.HasCheckConstraint("CK_Rate_Score", "Score BETWEEN 1 AND 10");
+                entity.HasCheckConstraint("CK_Rate_Score", "Score BETWEEN 1.0 AND 10.0");
                 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Ratings)

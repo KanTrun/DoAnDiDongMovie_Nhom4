@@ -9,6 +9,8 @@ import '../../core/providers/backend_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/models/movie.dart';
 import '../person/person_detail_screen.dart';
+import 'widgets/notes_section.dart';
+import 'widgets/rating_section.dart';
 
 class MovieDetailScreen extends ConsumerStatefulWidget {
   final int movieId;
@@ -1164,6 +1166,10 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
         ref.watch(similarMoviesProvider(MoviePageRequest(movieId: widget.movieId, page: 1)));
     final authAsync = ref.watch(authProvider);
     final isAuthenticated = authAsync.isAuthenticated;
+    
+    print('🔍 AUTH DEBUG - isAuthenticated: $isAuthenticated');
+    print('🔍 AUTH DEBUG - user: ${authAsync.user?.email}');
+    print('🔍 AUTH DEBUG - token: ${authAsync.token != null ? "Present" : "NULL"}');
 
     return Scaffold(
       backgroundColor: const Color(0xFF141414),
@@ -1213,6 +1219,23 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
                 _buildActionButtons(movie, isAuthenticated),
                 _buildOverview(movie.overview),
                 _buildMovieDetailsSection(movie),
+                // Temporarily show notes/ratings even when not authenticated for debugging
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: NotesSection(
+                    tmdbId: widget.movieId,
+                    mediaType: 'movie',
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: RatingSection(
+                    tmdbId: widget.movieId,
+                    mediaType: 'movie',
+                  ),
+                ),
                 _buildVideoSection(movieVideosAsync),
                 _buildCastSectionFromCredits(movieCreditsAsync),
                 _buildCrewSectionFromCredits(movieCreditsAsync),

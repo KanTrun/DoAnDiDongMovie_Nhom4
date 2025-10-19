@@ -1,0 +1,532 @@
+================================================
+              MOVIEPLUS - TỔNG QUAN HỆ THỐNG
+================================================
+
+📱 ỨNG DỤNG DI ĐỘNG FLUTTER - MOVIEPLUS
+🌐 BACKEND API .NET CORE - MOVIEPLUSAPI
+🗄️  DATABASE SQL SERVER
+
+================================================
+                    BACKEND (.NET CORE)
+================================================
+
+📁 CẤU TRÚC THƯ MỤC:
+MoviePlusBackend/MoviePlusApi/
+├── Controllers/
+│   ├── AuthController.cs
+│   ├── FavoritesController.cs
+│   ├── WatchlistController.cs
+│   ├── NotesController.cs
+│   ├── HistoryController.cs
+│   ├── RatingsController.cs
+│   └── AdminController.cs
+├── Models/
+│   ├── User.cs
+│   ├── Favorite.cs
+│   ├── Watchlist.cs
+│   ├── Note.cs
+│   ├── History.cs
+│   ├── Rating.cs
+│   └── Admin.cs
+├── Services/
+│   └── AuthService.cs
+├── Data/
+│   └── ApplicationDbContext.cs
+├── DTOs/
+│   ├── LoginRequest.cs
+│   ├── RegisterRequest.cs
+│   ├── AddFavoriteRequest.cs
+│   ├── AddWatchlistRequest.cs
+│   ├── AddNoteRequest.cs
+│   ├── AddHistoryRequest.cs
+│   └── AddRatingRequest.cs
+└── Migrations/
+
+🔐 XÁC THỰC & PHÂN QUYỀN:
+- JWT Token Authentication
+- Role-based Authorization (User, Admin)
+- Password hashing với BCrypt
+- Refresh token mechanism
+
+📊 DATABASE MODELS:
+
+1. User:
+   - UserId (Primary Key)
+   - Username (Unique)
+   - Email (Unique)
+   - PasswordHash
+   - CreatedAt
+   - LastLoginAt
+   - IsActive
+
+2. Favorite:
+   - FavoriteId (Primary Key)
+   - UserId (Foreign Key)
+   - TmdbId (TMDB Movie/TV Show ID)
+   - MediaType ('movie' hoặc 'tv')
+   - AddedAt
+
+3. Watchlist:
+   - WatchlistId (Primary Key)
+   - UserId (Foreign Key)
+   - TmdbId (TMDB Movie/TV Show ID)
+   - MediaType ('movie' hoặc 'tv')
+   - Note (Optional)
+   - AddedAt
+
+4. Note:
+   - NoteId (Primary Key)
+   - UserId (Foreign Key)
+   - MovieId
+   - Content
+   - CreatedAt
+   - UpdatedAt
+
+5. History:
+   - HistoryId (Primary Key)
+   - UserId (Foreign Key)
+   - MovieId
+   - WatchedAt
+   - Duration
+
+6. Rating:
+   - RatingId (Primary Key)
+   - UserId (Foreign Key)
+   - MovieId
+   - Rating (1-10)
+   - CreatedAt
+   - UpdatedAt
+
+7. Admin:
+   - AdminId (Primary Key)
+   - Username
+   - PasswordHash
+   - Role
+   - CreatedAt
+
+🌐 API ENDPOINTS:
+
+AUTHENTICATION:
+- POST /api/auth/register - Đăng ký tài khoản
+- POST /api/auth/login - Đăng nhập
+- POST /api/auth/refresh - Refresh token
+- POST /api/auth/logout - Đăng xuất
+
+FAVORITES:
+- GET /api/favorites - Lấy danh sách yêu thích
+- POST /api/favorites - Thêm vào yêu thích
+- DELETE /api/favorites/{id}?mediaType={type} - Xóa khỏi yêu thích
+- GET /api/favorites/{id} - Kiểm tra trạng thái yêu thích
+
+WATCHLIST:
+- GET /api/watchlist - Lấy danh sách xem sau
+- POST /api/watchlist - Thêm vào danh sách xem sau
+- DELETE /api/watchlist/{id}?mediaType={type} - Xóa khỏi danh sách
+- GET /api/watchlist/{id} - Kiểm tra trạng thái
+
+NOTES:
+- GET /api/notes - Lấy tất cả ghi chú
+- GET /api/notes/movie/{movieId} - Lấy ghi chú của phim
+- POST /api/notes - Tạo ghi chú mới
+- PUT /api/notes/{noteId} - Cập nhật ghi chú
+- DELETE /api/notes/{noteId} - Xóa ghi chú
+
+HISTORY:
+- GET /api/history - Lấy lịch sử xem
+- POST /api/history - Thêm vào lịch sử
+- DELETE /api/history - Xóa toàn bộ lịch sử
+
+RATINGS:
+- GET /api/ratings - Lấy tất cả đánh giá
+- GET /api/ratings/movie/{movieId} - Lấy đánh giá của phim
+- POST /api/ratings - Tạo đánh giá mới
+- PUT /api/ratings/{ratingId} - Cập nhật đánh giá
+- DELETE /api/ratings/{ratingId} - Xóa đánh giá
+
+ADMIN:
+- GET /api/admin/users - Quản lý người dùng
+- GET /api/admin/statistics - Thống kê hệ thống
+- PUT /api/admin/users/{userId}/toggle - Kích hoạt/vô hiệu hóa user
+- DELETE /api/admin/users/{userId} - Xóa user
+
+================================================
+                    FRONTEND (FLUTTER)
+================================================
+
+📁 CẤU TRÚC THƯ MỤC:
+lib/
+├── main.dart
+├── app.dart
+├── core/
+│   ├── auth/
+│   │   └── jwt_storage.dart
+│   ├── config/
+│   │   └── app_config.dart
+│   ├── env/
+│   │   └── tmdb_config.dart
+│   ├── models/
+│   │   ├── backend_models.dart
+│   │   ├── movie.dart
+│   │   └── user.dart
+│   ├── network/
+│   │   ├── api_client.dart
+│   │   └── dio_client.dart
+│   ├── providers/
+│   │   ├── admin_provider.dart
+│   │   ├── auth_provider.dart
+│   │   ├── backend_provider.dart
+│   │   └── tmdb_provider.dart
+│   ├── services/
+│   │   ├── auth_service.dart
+│   │   ├── backend_service.dart
+│   │   ├── tmdb_service.dart
+│   │   └── translation_service.dart
+│   ├── theme/
+│   │   └── app_theme.dart
+│   └── widgets/
+│       ├── subtitle_overlay.dart
+│       ├── translatable_overview_card.dart
+│       ├── custom_app_bar.dart
+│       └── loading_widget.dart
+└── features/
+    ├── admin/
+    │   ├── admin_dashboard.dart
+    │   ├── user_management.dart
+    │   └── admin_login.dart
+    ├── analytics/
+    ├── auth/
+    │   └── screens/
+    │       ├── login_screen.dart
+    │       └── register_screen.dart
+    ├── discover/
+    │   └── discover_tab.dart
+    ├── favorites/
+    │   └── favorites_tab.dart
+    ├── home/
+    │   ├── home_shell.dart
+    │   └── home_tab.dart
+    ├── movie/
+    │   └── models/
+    ├── movie_detail/
+    │   ├── movie_detail_screen.dart
+    │   └── tv_show_detail_screen.dart
+    ├── person/
+    │   └── person_detail_screen.dart
+    ├── profile/
+    │   ├── profile_tab.dart
+    │   └── edit_profile_screen.dart
+    ├── search/
+    │   ├── search_tab.dart
+    │   └── search_results.dart
+    └── watchlist/
+        └── watchlist_tab.dart
+
+🎨 UI/UX FEATURES:
+
+1. NAVIGATION:
+   - Bottom Navigation với 5 tabs
+   - Go Router cho navigation
+   - Custom App Bar với gradient
+   - Floating Action Button
+
+2. THEMING:
+   - Dark theme chính (Netflix-style)
+   - Color palette: Đỏ (#E50914), Xám đen (#141414)
+   - Custom fonts và typography
+   - Responsive design
+
+3. ANIMATIONS:
+   - Parallax scrolling effects
+   - Fade in/out transitions
+   - Scale animations
+   - Loading indicators
+
+🔧 STATE MANAGEMENT:
+- Riverpod cho state management
+- AsyncValue cho async operations
+- Provider pattern cho dependency injection
+
+📱 CÁC MÀN HÌNH CHÍNH:
+
+1. KHÁM PHÁ (Discover):
+   - Trending movies/TV shows
+   - Popular content
+   - Top rated
+   - Now playing
+   - Upcoming releases
+   - Genre-based filtering
+
+2. TÌM KIẾM (Search):
+   - Real-time search với TMDB API
+   - Search movies và TV shows
+   - Filter by genre, year, rating
+   - Search history
+   - Auto-translate overviews to Vietnamese
+
+3. YÊU THÍCH (Favorites):
+   - Danh sách phim/TV shows đã thích
+   - Hỗ trợ cả movies và TV shows
+   - Auto-translate descriptions
+   - Remove from favorites
+   - Navigate to detail screens
+
+4. DANH SÁCH (Watchlist):
+   - Danh sách phim/TV shows muốn xem
+   - Hỗ trợ cả movies và TV shows
+   - Add notes cho từng item
+   - Auto-translate descriptions
+   - Remove from watchlist
+
+5. CÁ NHÂN (Profile):
+   - User information
+   - Statistics (favorites count, watchlist count)
+   - Settings
+   - Logout functionality
+   - Edit profile
+
+6. MOVIE/TV SHOW DETAIL:
+   - Hero section với parallax background
+   - Movie/TV show information
+   - Cast và crew information
+   - Similar movies/TV shows
+   - Videos và trailers
+   - Add to favorites/watchlist
+   - Auto-translate overviews
+
+7. PERSON DETAIL:
+   - Actor/director information
+   - Filmography
+   - Biography
+   - Photos gallery
+
+🔌 TÍCH HỢP API:
+
+1. TMDB API:
+   - Movie details và search
+   - TV show details và search
+   - Cast và crew information
+   - Videos và images
+   - Similar content
+   - Popular/trending content
+
+2. TRANSLATION API:
+   - Google Translate API
+   - Auto-translate movie/TV show overviews
+   - Vietnamese title support
+   - Fallback translation services
+
+3. BACKEND API:
+   - User authentication
+   - Favorites management
+   - Watchlist management
+   - Notes system
+   - Ratings system
+   - History tracking
+
+🎯 TÍNH NĂNG NỔI BẬT:
+
+1. DUAL LANGUAGE SUPPORT:
+   - Vietnamese titles từ TMDB
+   - Auto-translate English overviews
+   - Vietnamese UI
+   - Fallback translation mechanisms
+
+2. MEDIA TYPE SUPPORT:
+   - Movies và TV shows
+   - Separate handling với mediaType
+   - ID conflict resolution
+   - Unified UI experience
+
+3. OFFLINE CAPABILITIES:
+   - Local storage cho JWT tokens
+   - Cached user preferences
+   - Offline favorites/watchlist display
+
+4. ADMIN PANEL:
+   - User management
+   - System statistics
+   - Content moderation
+   - Analytics dashboard
+
+5. RESPONSIVE DESIGN:
+   - Mobile-first approach
+   - Adaptive layouts
+   - Touch-friendly interactions
+   - Smooth scrolling
+
+6. PERFORMANCE OPTIMIZATION:
+   - Lazy loading
+   - Image caching
+   - Efficient state management
+   - Minimal API calls
+
+🔒 SECURITY FEATURES:
+- JWT token authentication
+- Secure API communication
+- Input validation
+- Error handling
+- Rate limiting
+
+📊 ANALYTICS & TRACKING:
+- User engagement metrics
+- Content popularity tracking
+- Search analytics
+- Performance monitoring
+
+🎨 CUSTOM WIDGETS:
+- TranslatableOverviewCard
+- SubtitleOverlay
+- CustomAppBar
+- LoadingWidget
+- AnimatedButton
+- VideoPlayerWithTranslation
+
+================================================
+                    DATABASE SCHEMA
+================================================
+
+📋 TABLES:
+
+Users:
+- UserId (int, Primary Key, Identity)
+- Username (nvarchar(50), Unique, Not Null)
+- Email (nvarchar(100), Unique, Not Null)
+- PasswordHash (nvarchar(255), Not Null)
+- CreatedAt (datetime2, Not Null)
+- LastLoginAt (datetime2, Nullable)
+- IsActive (bit, Not Null, Default: 1)
+
+Favorites:
+- FavoriteId (int, Primary Key, Identity)
+- UserId (int, Foreign Key, Not Null)
+- TmdbId (int, Not Null)
+- MediaType (nvarchar(10), Not Null, Default: 'movie')
+- AddedAt (datetime2, Not Null)
+
+Watchlist:
+- WatchlistId (int, Primary Key, Identity)
+- UserId (int, Foreign Key, Not Null)
+- TmdbId (int, Not Null)
+- MediaType (nvarchar(10), Not Null, Default: 'movie')
+- Note (nvarchar(max), Nullable)
+- AddedAt (datetime2, Not Null)
+
+Notes:
+- NoteId (int, Primary Key, Identity)
+- UserId (int, Foreign Key, Not Null)
+- MovieId (int, Not Null)
+- Content (nvarchar(max), Not Null)
+- CreatedAt (datetime2, Not Null)
+- UpdatedAt (datetime2, Nullable)
+
+History:
+- HistoryId (int, Primary Key, Identity)
+- UserId (int, Foreign Key, Not Null)
+- MovieId (int, Not Null)
+- WatchedAt (datetime2, Not Null)
+- Duration (int, Nullable)
+
+Ratings:
+- RatingId (int, Primary Key, Identity)
+- UserId (int, Foreign Key, Not Null)
+- MovieId (int, Not Null)
+- Rating (decimal(3,1), Not Null, Check: Rating >= 1 AND Rating <= 10)
+- CreatedAt (datetime2, Not Null)
+- UpdatedAt (datetime2, Nullable)
+
+Admins:
+- AdminId (int, Primary Key, Identity)
+- Username (nvarchar(50), Unique, Not Null)
+- PasswordHash (nvarchar(255), Not Null)
+- Role (nvarchar(50), Not Null)
+- CreatedAt (datetime2, Not Null)
+
+🔗 FOREIGN KEY RELATIONSHIPS:
+- Favorites.UserId -> Users.UserId
+- Watchlist.UserId -> Users.UserId
+- Notes.UserId -> Users.UserId
+- History.UserId -> Users.UserId
+- Ratings.UserId -> Users.UserId
+
+📈 INDEXES:
+- IX_Favorites_UserId_TmdbId_MediaType (Composite Index)
+- IX_Watchlist_UserId_TmdbId_MediaType (Composite Index)
+- IX_Notes_UserId_MovieId
+- IX_History_UserId_WatchedAt
+- IX_Ratings_UserId_MovieId
+
+================================================
+                    DEPLOYMENT
+================================================
+
+🌐 BACKEND DEPLOYMENT:
+- .NET Core 6.0 API
+- SQL Server Database
+- JWT Authentication
+- CORS Configuration
+- Swagger Documentation
+
+📱 FRONTEND DEPLOYMENT:
+- Flutter Web
+- Responsive Design
+- PWA Capabilities
+- Chrome Extension Support
+
+🔧 DEVELOPMENT SETUP:
+- Visual Studio Code
+- Flutter SDK
+- .NET Core SDK
+- SQL Server LocalDB
+- Git Version Control
+
+================================================
+                    TỔNG KẾT
+================================================
+
+🎯 MOVIEPLUS là một ứng dụng di động hoàn chỉnh với:
+
+✅ BACKEND (.NET Core):
+- RESTful API với 7 controllers
+- JWT Authentication & Authorization
+- 7 database tables với relationships
+- Admin panel với user management
+- Comprehensive error handling
+
+✅ FRONTEND (Flutter):
+- 7 main screens với full functionality
+- Riverpod state management
+- TMDB API integration
+- Translation services
+- Netflix-style UI/UX
+- Responsive design
+
+✅ FEATURES:
+- User registration/login
+- Movie & TV show browsing
+- Favorites & Watchlist management
+- Notes & Ratings system
+- Search functionality
+- Admin panel
+- Vietnamese translation
+- Media type support (movies/TV shows)
+
+✅ TECHNICAL STACK:
+- Backend: .NET Core 6.0, SQL Server, JWT
+- Frontend: Flutter, Dart, Riverpod
+- APIs: TMDB, Google Translate
+- Database: SQL Server với Entity Framework
+- Authentication: JWT tokens
+- State Management: Riverpod
+- UI Framework: Material Design 3
+
+📊 STATISTICS:
+- 7 Controllers trong Backend
+- 7 Models trong Backend
+- 7 Main Screens trong Frontend
+- 7 Database Tables
+- 30+ API Endpoints
+- 50+ Widgets trong Frontend
+- 100% Vietnamese UI
+- Dual language support (EN/VI)
+
+🚀 Ứng dụng đã sẵn sàng để deploy và sử dụng!

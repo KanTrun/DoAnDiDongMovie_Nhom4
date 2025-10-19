@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/models/backend_models.dart';
 import '../../core/models/movie.dart';
 import '../../core/providers/tmdb_provider.dart';
@@ -541,19 +542,9 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
             data: (mediaDetail) => InkWell(
               onTap: () {
                 if ((favorite.mediaType ?? 'movie') == 'tv') {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          TvShowDetailScreen(tvShowId: favorite.tmdbId),
-                    ),
-                  );
+                  context.go('/tv/${favorite.tmdbId}');
                 } else {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          MovieDetailScreen(movieId: favorite.tmdbId),
-                    ),
-                  );
+                  context.go('/movie/${favorite.tmdbId}');
                 }
               },
               borderRadius: BorderRadius.circular(12),

@@ -165,3 +165,4 @@ D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\refint\
 D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\MoviePlusApi.pdb
 D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\MoviePlusApi.genruntimeconfig.cache
 D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\ref\MoviePlusApi.dll
+D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\MoviePlusApi.sourcelink.json

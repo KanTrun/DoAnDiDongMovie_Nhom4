@@ -93,7 +93,7 @@ namespace MoviePlusApi.Controllers
                         TmdbId = n.TmdbId,
                         MediaType = n.MediaType,
                         Content = n.Content,
-                        UpdatedAt = n.UpdatedAt
+                        UpdatedAt = n.UpdatedAt ?? n.CreatedAt
                     }).ToList(),
                     Histories = u.Histories.Select(h => new HistoryItemDto
                     {
@@ -107,7 +107,7 @@ namespace MoviePlusApi.Controllers
                     {
                         TmdbId = r.TmdbId,
                         MediaType = r.MediaType,
-                        Score = r.Score,
+                        Score = (int)r.Score,
                         CreatedAt = r.CreatedAt
                     }).ToList()
                 })

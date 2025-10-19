@@ -20,10 +20,11 @@ namespace MoviePlusApi.Models
         public string MediaType { get; set; } = string.Empty; // 'movie' or 'tv'
 
         [Required]
-        [Range(1, 10)]
-        public byte Score { get; set; }
+        [Column(TypeName = "decimal(3,1)")]
+        public decimal Score { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
 
         // Navigation property
         public virtual User User { get; set; } = null!;

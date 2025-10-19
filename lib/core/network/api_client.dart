@@ -14,13 +14,22 @@ class ApiClient {
     
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
+        print('🔍 BACKEND REQUEST: ${options.method} ${options.path}');
+        print('🔑 BACKEND TOKEN: ${token != null ? "Present" : "NULL"}');
+        print('📋 BACKEND QUERY: ${options.queryParameters}');
+        
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         return handler.next(options);
       },
+      onResponse: (response, handler) {
+        print('✅ BACKEND RESPONSE: ${response.statusCode} - ${response.requestOptions.path}');
+        return handler.next(response);
+      },
       onError: (error, handler) {
-        print('API Error: ${error.response?.statusCode} - ${error.message}');
+        print('❌ BACKEND ERROR: ${error.response?.statusCode} - ${error.message}');
+        print('📄 BACKEND ERROR DATA: ${error.response?.data}');
         return handler.next(error);
       },
     ));

@@ -10,6 +10,7 @@ import 'features/favorites/favorites_tab.dart';
 import 'features/watchlist/watchlist_tab.dart';
 import 'features/profile/profile_tab.dart';
 import 'features/movie_detail/movie_detail_screen.dart';
+import 'features/movie_detail/tv_show_detail_screen.dart';
 import 'features/person/person_detail_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
@@ -48,13 +49,13 @@ class _MoviePlusAppState extends ConsumerState<MoviePlusApp> {
         final isAuthenticated = ref.read(isAuthenticatedProvider);
         final isInitialized = !ref.read(authLoadingProvider);
 
-        print('ROUTER DEBUG - Location: ${state.matchedLocation}');
-        print('ROUTER DEBUG - isAuthenticated: $isAuthenticated');
-        print('ROUTER DEBUG - isInitialized: $isInitialized');
+        print('🔍 ROUTER DEBUG - Location: ${state.matchedLocation}');
+        print('🔍 ROUTER DEBUG - isAuthenticated: $isAuthenticated');
+        print('🔍 ROUTER DEBUG - isInitialized: $isInitialized');
 
         // Wait for auth initialization
         if (!isInitialized) {
-          print('ROUTER DEBUG - Not initialized, waiting...');
+          print('🔍 ROUTER DEBUG - Not initialized, waiting...');
           return null;
         }
 
@@ -62,17 +63,17 @@ class _MoviePlusAppState extends ConsumerState<MoviePlusApp> {
         if (!isAuthenticated && 
             !state.matchedLocation.startsWith('/login') &&
             !state.matchedLocation.startsWith('/register')) {
-          print('ROUTER DEBUG - Not authenticated, redirecting to login');
+          print('🔍 ROUTER DEBUG - Not authenticated, redirecting to login');
           return '/login';
         }
 
         // Auth routes - redirect to home if already authenticated  
         if ((state.matchedLocation == '/login' || state.matchedLocation == '/register') && isAuthenticated) {
-          print('ROUTER DEBUG - Already authenticated, redirecting to home');
+          print('🔍 ROUTER DEBUG - Already authenticated, redirecting to home');
           return '/home';
         }
 
-        print('ROUTER DEBUG - No redirect needed');
+        print('🔍 ROUTER DEBUG - No redirect needed');
         // No redirect needed for other routes
         return null;
       },
@@ -128,6 +129,14 @@ class _MoviePlusAppState extends ConsumerState<MoviePlusApp> {
           builder: (context, state) {
             final movieId = int.parse(state.pathParameters['id']!);
             return MovieDetailScreen(movieId: movieId);
+          },
+        ),
+        GoRoute(
+          path: '/tv/:id',
+          name: 'tv-detail',
+          builder: (context, state) {
+            final tvShowId = int.parse(state.pathParameters['id']!);
+            return TvShowDetailScreen(tvShowId: tvShowId);
           },
         ),
         GoRoute(

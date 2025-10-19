@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/models/backend_models.dart';
 import '../../core/providers/tmdb_provider.dart';
 import '../../core/providers/backend_provider.dart';
@@ -538,21 +539,9 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
             data: (mediaDetail) => InkWell(
               onTap: () {
                 if ((watchlistItem.mediaType ?? 'movie') == 'tv') {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => TvShowDetailScreen(
-                        tvShowId: watchlistItem.tmdbId,
-                      ),
-                    ),
-                  );
+                  context.go('/tv/${watchlistItem.tmdbId}');
                 } else {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => MovieDetailScreen(
-                        movieId: watchlistItem.tmdbId,
-                      ),
-                    ),
-                  );
+                  context.go('/movie/${watchlistItem.tmdbId}');
                 }
               },
               borderRadius: BorderRadius.circular(12),

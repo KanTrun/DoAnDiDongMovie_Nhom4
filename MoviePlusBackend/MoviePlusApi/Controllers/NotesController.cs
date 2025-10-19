@@ -20,73 +20,155 @@ namespace MoviePlusApi.Controllers
             _context = context;
         }
 
-        [HttpGet("{tmdbId}")]
-        public async Task<IActionResult> GetNote(int tmdbId, [FromQuery] string mediaType)
+        [HttpGet]
+        public async Task<IActionResult> GetNotes([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             var userId = GetCurrentUserId();
+            var skip = (page - 1) * pageSize;
 
-            var note = await _context.Notes
-                .FirstOrDefaultAsync(n => n.UserId == userId && n.TmdbId == tmdbId && n.MediaType == mediaType);
+            var query = _context.Notes
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt);
 
-            if (note == null)
+            var totalCount = await query.CountAsync();
+            var notes = await query
+                .Skip(skip)
+                .Take(pageSize)
+                .Select(n => new NoteResponse
+                {
+                    Id = n.Id,
+                    TmdbId = n.TmdbId,
+                    MediaType = n.MediaType,
+                    Content = n.Content,
+                    CreatedAt = n.CreatedAt,
+                    UpdatedAt = n.UpdatedAt
+                })
+                .ToListAsync();
+
+            var response = new PagedNotesResponse
             {
-                return NotFound();
-            }
+                Notes = notes,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+            };
 
-            return Ok(new NoteResponseDto
-            {
-                Content = note.Content,
-                UpdatedAt = note.UpdatedAt
-            });
+            return Ok(response);
         }
 
-        [HttpPut("{tmdbId}")]
-        public async Task<IActionResult> SaveNote(int tmdbId, NoteDto dto)
+        [HttpGet("movie/{tmdbId}")]
+        public async Task<IActionResult> GetNotesByMovie(int tmdbId, [FromQuery] string mediaType = "movie")
+        {
+            var userId = GetCurrentUserId();
+
+            var notes = await _context.Notes
+                .Where(n => n.UserId == userId && n.TmdbId == tmdbId && n.MediaType == mediaType)
+                .OrderByDescending(n => n.CreatedAt)
+                .Select(n => new NoteResponse
+                {
+                    Id = n.Id,
+                    TmdbId = n.TmdbId,
+                    MediaType = n.MediaType,
+                    Content = n.Content,
+                    CreatedAt = n.CreatedAt,
+                    UpdatedAt = n.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(notes);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateNote(AddNoteRequest request)
+        {
+            var userId = GetCurrentUserId();
+
+            // Validate content
+            if (string.IsNullOrWhiteSpace(request.Content))
+            {
+                return BadRequest(new { message = "Content is required" });
+            }
+
+            var note = new Note
+            {
+                UserId = userId,
+                TmdbId = request.TmdbId,
+                MediaType = request.MediaType,
+                Content = request.Content.Trim(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Notes.Add(note);
+            await _context.SaveChangesAsync();
+
+            var response = new NoteResponse
+            {
+                Id = note.Id,
+                TmdbId = note.TmdbId,
+                MediaType = note.MediaType,
+                Content = note.Content,
+                CreatedAt = note.CreatedAt,
+                UpdatedAt = note.UpdatedAt
+            };
+
+            return CreatedAtAction(nameof(GetNotes), new { id = note.Id }, response);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateNote(long id, UpdateNoteRequest request)
         {
             var userId = GetCurrentUserId();
 
             var note = await _context.Notes
-                .FirstOrDefaultAsync(n => n.UserId == userId && n.TmdbId == tmdbId && n.MediaType == dto.MediaType);
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
 
             if (note == null)
             {
-                note = new Note
-                {
-                    UserId = userId,
-                    TmdbId = tmdbId,
-                    MediaType = dto.MediaType,
-                    Content = dto.Content
-                };
-                _context.Notes.Add(note);
+                return NotFound(new { message = "Note not found" });
             }
-            else
+
+            // Validate content
+            if (string.IsNullOrWhiteSpace(request.Content))
             {
-                note.Content = dto.Content;
-                note.UpdatedAt = DateTime.UtcNow;
+                return BadRequest(new { message = "Content is required" });
             }
+
+            note.Content = request.Content.Trim();
+            note.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Note saved" });
+            var response = new NoteResponse
+            {
+                Id = note.Id,
+                TmdbId = note.TmdbId,
+                MediaType = note.MediaType,
+                Content = note.Content,
+                CreatedAt = note.CreatedAt,
+                UpdatedAt = note.UpdatedAt
+            };
+
+            return Ok(response);
         }
 
-        [HttpDelete("{tmdbId}")]
-        public async Task<IActionResult> DeleteNote(int tmdbId, [FromQuery] string mediaType)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteNote(long id)
         {
             var userId = GetCurrentUserId();
 
             var note = await _context.Notes
-                .FirstOrDefaultAsync(n => n.UserId == userId && n.TmdbId == tmdbId && n.MediaType == mediaType);
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
 
             if (note == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Note not found" });
             }
 
             _context.Notes.Remove(note);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Note deleted" });
+            return NoContent();
         }
 
         private Guid GetCurrentUserId()

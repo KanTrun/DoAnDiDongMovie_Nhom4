@@ -54,6 +54,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   static const String _userKey = 'auth_user';
 
   Future<void> initialize() async {
+    print('🔍 AUTH INIT - Starting initialization');
     state = state.copyWith(isLoading: true);
     
     try {
@@ -61,14 +62,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
       String? token = await _storage.read(key: _tokenKey);
       final userJson = await _storage.read(key: _userKey);
       
+      print('🔍 AUTH INIT - Token from storage: ${token != null ? "Present" : "NULL"}');
+      print('🔍 AUTH INIT - UserJson from storage: ${userJson != null ? "Present" : "NULL"}');
+      
       // If not found, try JwtStorage
       token ??= await JwtStorage.getToken();
+      
+      print('🔍 AUTH INIT - Token after JwtStorage: ${token != null ? "Present" : "NULL"}');
       
       if (token != null && userJson != null) {
         // Verify token is still valid
         try {
+          print('🔍 AUTH INIT - Verifying token with backend');
           final user = await AuthService.getProfile(token);
           state = AuthState(user: user, token: token);
+          
+          print('🔍 AUTH INIT - Token valid, user: ${user.email}');
           
           // Sync to both storages
           await _storage.write(key: _tokenKey, value: token);
@@ -76,14 +85,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
           await JwtStorage.saveToken(token);
           await JwtStorage.saveUserId(user.userId);
         } catch (e) {
+          print('🔍 AUTH INIT - Token invalid, clearing storage: $e');
           // Token invalid, clear both storages
           await logout();
         }
       } else if (token != null) {
         // Have token but no user data, try to get user
         try {
+          print('🔍 AUTH INIT - Getting user profile with token');
           final user = await AuthService.getProfile(token);
           state = AuthState(user: user, token: token);
+          
+          print('🔍 AUTH INIT - Got user profile: ${user.email}');
           
           // Save to both storages
           await _storage.write(key: _tokenKey, value: token);
@@ -91,13 +104,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
           await JwtStorage.saveToken(token);
           await JwtStorage.saveUserId(user.userId);
         } catch (e) {
+          print('🔍 AUTH INIT - Failed to get user profile: $e');
           // Token invalid, clear both storages
           await logout();
         }
       } else {
+        print('🔍 AUTH INIT - No token found, setting empty state');
         state = const AuthState();
       }
     } catch (e) {
+      print('🔍 AUTH INIT - Error during initialization: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Lỗi khi khởi tạo: ${e.toString()}',
