@@ -49,32 +49,23 @@ class _MoviePlusAppState extends ConsumerState<MoviePlusApp> {
         final isAuthenticated = ref.read(isAuthenticatedProvider);
         final isInitialized = !ref.read(authLoadingProvider);
 
-        print('🔍 ROUTER DEBUG - Location: ${state.matchedLocation}');
-        print('🔍 ROUTER DEBUG - isAuthenticated: $isAuthenticated');
-        print('🔍 ROUTER DEBUG - isInitialized: $isInitialized');
-
         // Wait for auth initialization
         if (!isInitialized) {
-          print('🔍 ROUTER DEBUG - Not initialized, waiting...');
           return null;
         }
 
-        // If not authenticated and trying to access protected routes
+        // Simple redirect logic
         if (!isAuthenticated && 
             !state.matchedLocation.startsWith('/login') &&
             !state.matchedLocation.startsWith('/register')) {
-          print('🔍 ROUTER DEBUG - Not authenticated, redirecting to login');
           return '/login';
         }
 
-        // Auth routes - redirect to home if already authenticated  
-        if ((state.matchedLocation == '/login' || state.matchedLocation == '/register') && isAuthenticated) {
-          print('🔍 ROUTER DEBUG - Already authenticated, redirecting to home');
+        if (isAuthenticated && 
+            (state.matchedLocation == '/login' || state.matchedLocation == '/register')) {
           return '/home';
         }
 
-        print('🔍 ROUTER DEBUG - No redirect needed');
-        // No redirect needed for other routes
         return null;
       },
       routes: [

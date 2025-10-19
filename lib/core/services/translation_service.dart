@@ -36,7 +36,7 @@ class TranslationService {
     try {
       // Temporarily disabled speech recognition
       _isInitialized = true;
-      debugPrint('✅ Translation service initialized successfully (speech disabled)');
+      // Translation service initialized (speech disabled)
       return _isInitialized;
     } catch (e) {
       debugPrint('Error initializing translation service: $e');
@@ -90,10 +90,10 @@ class TranslationService {
         from: 'auto',
         to: 'vi',
       );
-      debugPrint('✅ Translation result: "${translation.text.substring(0, translation.text.length > 50 ? 50 : translation.text.length)}..."');
+      // Translation completed
       return translation.text;
     } catch (e) {
-      debugPrint('❌ Error in manual translation: $e');
+      // Translation error
       return text; // Return original text if translation fails
     }
   }

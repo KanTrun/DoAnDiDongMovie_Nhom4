@@ -20,7 +20,7 @@ class TmdbService {
         );
         
         final viResults = MovieResponse.fromJson(viResponse.data, mediaType: 'movie');
-        print('📊 Vietnamese popular movies found ${viResults.results.length} results');
+        // Vietnamese popular movies found
         
         if (viResults.results.length >= 5) {
           return viResults;
@@ -37,11 +37,11 @@ class TmdbService {
         );
         
         final enResults = MovieResponse.fromJson(enResponse.data, mediaType: 'movie');
-        print('📊 English popular movies found ${enResults.results.length} results');
+        // English popular movies found
         
         return enResults;
       } catch (e) {
-        print('❌ Language-specific popular movies failed: $e');
+        // Language-specific popular movies failed
         
         // Fallback to default
         final response = await ApiClient.tmdb().get(
@@ -144,7 +144,7 @@ class TmdbService {
         );
         
         final movieResponse = MovieResponse.fromJson(response.data, mediaType: 'movie');
-        print('📊 Vietnamese discover found ${movieResponse.results.length} results');
+        // Vietnamese discover found
         
         // If we have good results, return them
         if (movieResponse.results.length >= 5) {
@@ -161,11 +161,11 @@ class TmdbService {
         );
         
         final enMovieResponse = MovieResponse.fromJson(enResponse.data, mediaType: 'movie');
-        print('📊 English discover found ${enMovieResponse.results.length} results');
+        // English discover found
         
         return enMovieResponse;
       } catch (e) {
-        print('❌ Language-specific discover failed: $e');
+        // Language-specific discover failed
         
         // Fallback to default discover
         final response = await ApiClient.tmdb().get(
@@ -205,10 +205,7 @@ class TmdbService {
         totalResults: searchResults.length,
       );
     } on DioException catch (e) {
-      print('❌ Search error: ${e.message}');
-      if (e.response?.data != null) {
-        print('📄 Error data: ${e.response?.data}');
-      }
+      // Search error occurred
       throw _handleError(e);
     }
   }
@@ -218,10 +215,10 @@ class TmdbService {
     const maxPages = 5; // Search up to 5 pages for comprehensive results
     bool hasMoreResults = true;
     
-    print('🔍 COMPREHENSIVE SEARCH: Starting multi-page search for "$query"');
+    // Starting comprehensive search
     
     for (int currentPage = startPage; currentPage <= maxPages && hasMoreResults; currentPage++) {
-      print('🔍 Searching page $currentPage for "$query"');
+      // Searching page $currentPage
       
       bool pageHasResults = false;
       
@@ -235,19 +232,19 @@ class TmdbService {
           'include_video': false,
           'language': 'vi-VN', // Get Vietnamese titles
         };
-        print('🔍 API CALL: Searching movies with query="$query", page=$currentPage, language=vi-VN');
+        // Searching movies with Vietnamese language
         
         final viMovieResponse = await ApiClient.tmdb().get(
           '/search/movie',
           queryParameters: viQueryParams,
         );
-        print('🔍 VI API RESPONSE: Got ${viMovieResponse.data['results']?.length ?? 0} results');
+        // Vietnamese API response received
         
         // Debug: Print Vietnamese API response for first few movies
         final viResults = viMovieResponse.data['results'] as List<dynamic>? ?? [];
         for (int i = 0; i < viResults.length && i < 3; i++) {
           final movieData = viResults[i] as Map<String, dynamic>;
-          print('🔍 RAW VI API Movie $i: Title="${movieData['title']}", Original Title="${movieData['original_title']}"');
+          // Vietnamese API movie data
         }
         
         // Then get English overviews
@@ -258,13 +255,13 @@ class TmdbService {
           'include_video': false,
           'language': 'en-US', // Get English overviews
         };
-        print('🔍 API CALL: Searching movies with query="$query", page=$currentPage, language=en-US');
+        // Searching movies with English language
         
         final enMovieResponse = await ApiClient.tmdb().get(
           '/search/movie',
           queryParameters: enQueryParams,
         );
-        print('🔍 EN API RESPONSE: Got ${enMovieResponse.data['results']?.length ?? 0} results');
+        // English API response received
         
         // Merge Vietnamese titles with English overviews
         final enResults = enMovieResponse.data['results'] as List<dynamic>? ?? [];
@@ -295,8 +292,7 @@ class TmdbService {
         // Debug: Print combined results
         for (int i = 0; i < combinedResults.length && i < 3; i++) {
           final movieData = combinedResults[i];
-          print('🔍 COMBINED Movie $i: VI Title="${movieData['title']}", EN Title="${movieData['title_en']}", EN Overview="${movieData['overview_en']}"');
-          print('🔍 RAW VI Data: ${movieData}');
+          // Combined movie data
         }
         
         // Create fake response data with combined results
@@ -311,18 +307,18 @@ class TmdbService {
         
         if (movieResults.results.isNotEmpty) {
           pageHasResults = true;
-          print('📊 Page $currentPage: Found ${movieResults.results.length} movies');
+          // Page results found
           
           // Debug: Print all movie titles and overviews
           for (int i = 0; i < movieResults.results.length; i++) {
             final movie = movieResults.results[i];
-            print('📊 Movie $i: "${movie.title}" - Overview: "${movie.overview}"');
+            // Movie data
           }
           
           for (final movie in movieResults.results) {
             if (!seenIds.contains(movie.id)) {
               // Debug: Check what we got from API
-              print('🔍 DEBUG API: Movie "${movie.title}" - Original overview from API: "${movie.overview}"');
+              // Original overview from API
               
               // Get English overview from the combined data
               String englishOverview = '';
@@ -332,12 +328,12 @@ class TmdbService {
               );
               if (combinedData.isNotEmpty) {
                 englishOverview = combinedData['overview_en'] ?? '';
-                print('🔍 DEBUG API: Movie "${movie.title}" - English overview: "$englishOverview"');
+                // English overview
               }
               
               // Always ensure Vietnamese overview using English overview
               String vietnameseOverview = await _ensureVietnameseOverview(movie.title, englishOverview.isNotEmpty ? englishOverview : movie.overview, 'movie');
-              print('🔍 DEBUG: Movie "${movie.title}" - Final Vietnamese overview: "$vietnameseOverview"');
+              // Final Vietnamese overview
               
               // Check if title needs translation (if it's in English/Japanese/Chinese, translate to Vietnamese)
               String finalTitle = movie.title;
@@ -346,10 +342,10 @@ class TmdbService {
                   final titleTranslation = await _translateTitle(movie.title);
                   if (titleTranslation.isNotEmpty && titleTranslation != movie.title) {
                     finalTitle = titleTranslation;
-                    print('🔍 DEBUG: Title translated from "${movie.title}" to "$finalTitle"');
+                    // Title translated
                   }
                 } catch (e) {
-                  print('❌ Title translation failed: $e');
+                  // Title translation failed
                 }
               }
               
@@ -421,7 +417,7 @@ class TmdbService {
         
         if (tvResults.isNotEmpty) {
           pageHasResults = true;
-          print('📊 Page $currentPage: Found ${tvResults.length} TV shows');
+          // TV shows found
           
           for (final tv in tvResults) {
             DateTime releaseDate = DateTime.now();
@@ -436,7 +432,7 @@ class TmdbService {
             
             final overview = tv['overview'] ?? '';
             print('📺 TV Show: ${tv['name']} - Overview: "${overview}"');
-            print('🔍 DEBUG API: TV Show "${tv['name']}" - Original overview from API: "$overview"');
+            // TV show original overview
             
             // Get English overview from the combined data
             String englishOverview = '';
@@ -444,12 +440,12 @@ class TmdbService {
             if (enTvResultsMap.containsKey(tvId)) {
               final enTv = enTvResultsMap[tvId]!;
               englishOverview = enTv['overview'] ?? '';
-              print('🔍 DEBUG API: TV Show "${tv['name']}" - English overview: "$englishOverview"');
+              // TV show English overview
             }
             
             // Always ensure Vietnamese overview for TV shows using English overview
             String finalOverview = await _ensureVietnameseOverview(tv['name'] ?? '', englishOverview.isNotEmpty ? englishOverview : overview, 'tv');
-            print('🔍 DEBUG: TV Show "${tv['name']}" - Final Vietnamese overview: "$finalOverview"');
+            // TV show final Vietnamese overview
             
             // Check if title needs translation (if it's in English/Japanese/Chinese, translate to Vietnamese)
             String finalTitle = tv['name'] ?? '';
@@ -458,10 +454,10 @@ class TmdbService {
                 final titleTranslation = await _translateTitle(finalTitle);
                 if (titleTranslation.isNotEmpty && titleTranslation != finalTitle) {
                   finalTitle = titleTranslation;
-                  print('🔍 DEBUG: TV Title translated from "${tv['name']}" to "$finalTitle"');
+                  // TV title translated
                 }
               } catch (e) {
-                print('❌ TV Title translation failed: $e');
+                // TV title translation failed
               }
             }
             
@@ -497,10 +493,10 @@ class TmdbService {
       // If no results on this page, stop searching more pages
       if (!pageHasResults) {
         hasMoreResults = false;
-        print('📊 No more results found on page $currentPage, stopping search');
+        // No more results found
       }
       
-      print('📊 Total results so far: ${searchResults.length}');
+      // Total results so far
     }
   }
   
@@ -537,7 +533,7 @@ class TmdbService {
         variations.add(encoded);
       }
     } catch (e) {
-      print('❌ Encoding failed: $e');
+      // Encoding failed
     }
     
     // Remove duplicates
@@ -710,14 +706,14 @@ class TmdbService {
                 personData['biography'] = vietnameseBio;
                 personData['biography_language'] = 'vi';
                 personData['original_biography'] = englishBio; // Keep original for reference
-                print('✅ Using translated Vietnamese biography (${vietnameseBio.length} chars)');
+                // Using translated Vietnamese biography
               } else {
                 personData['biography'] = englishBio;
                 personData['biography_language'] = 'en';
                 print('⚠️  Translation failed, using English biography (${englishBio.length} chars)');
               }
             } catch (e) {
-              print('❌ Translation error: $e, using English biography');
+              // Translation error, using English biography
               personData['biography'] = englishBio;
               personData['biography_language'] = 'en';
             }
@@ -732,12 +728,12 @@ class TmdbService {
           }
           
         } catch (e) {
-          print('❌ Failed to fetch English biography for person $personId: $e');
+          // Failed to fetch English biography
           personData['biography_language'] = 'vi';
         }
       } else {
         personData['biography_language'] = 'vi';
-        print('✅ Using Vietnamese biography (${biography.length} chars)');
+        // Using Vietnamese biography
       }
       
       print('Final biography length: ${(personData['biography'] as String?)?.length ?? 0}');
@@ -781,7 +777,7 @@ class TmdbService {
       final data = response.data as Map<String, dynamic>;
       final results = data['results'] as List<dynamic>? ?? [];
       
-      print('📊 Found ${results.length} total videos for movie $movieId');
+      // Found total videos
       
       // First try: YouTube trailers and teasers
       var videos = results.where((video) {
@@ -841,7 +837,7 @@ class TmdbService {
       
       if (videos.isNotEmpty) {
         final bestVideo = videos.first;
-        print('✅ Best video: ${bestVideo['name']} (${bestVideo['type']}) - ${bestVideo['site']} - Size: ${bestVideo['size']}');
+        // Best video found
       }
       
       // Return the processed data with best video info
@@ -852,10 +848,10 @@ class TmdbService {
       
       return processedData;
     } on DioException catch (e) {
-      print('❌ Error fetching movie videos: $e');
+      // Error fetching movie videos
       throw _handleError(e);
     } catch (e) {
-      print('❌ Unexpected error fetching movie videos: $e');
+      // Unexpected error fetching movie videos
       throw Exception('Unexpected error: $e');
     }
   }
@@ -872,7 +868,7 @@ class TmdbService {
         if (translatedTitle != movieData['title']) {
           translatedData['title_vi'] = translatedTitle;
           translatedData['title_language'] = 'vi';
-          print('✅ Translated title: ${movieData['title']} → $translatedTitle');
+          // Translated title
         }
       }
       
@@ -882,7 +878,7 @@ class TmdbService {
         if (translatedOverview != movieData['overview']) {
           translatedData['overview_vi'] = translatedOverview;
           translatedData['overview_language'] = 'vi';
-          print('✅ Translated overview (${translatedOverview.length} chars)');
+          // Translated overview
         }
       }
       
@@ -892,13 +888,13 @@ class TmdbService {
         if (translatedTagline != movieData['tagline']) {
           translatedData['tagline_vi'] = translatedTagline;
           translatedData['tagline_language'] = 'vi';
-          print('✅ Translated tagline: ${movieData['tagline']} → $translatedTagline');
+          // Translated tagline
         }
       }
       
       return translatedData;
     } catch (e) {
-      print('❌ Translation error: $e');
+      // Translation error
       return movieData; // Return original data if translation fails
     }
   }
@@ -1000,11 +996,11 @@ class TmdbService {
         final translatedText = await translationService.translateToVietnamese(originalOverview);
         
         if (translatedText.isNotEmpty && translatedText != originalOverview) {
-          print('✅ REAL TRANSLATION SUCCESS (TranslationService): "$translatedText"');
+          // TranslationService success
           return translatedText;
         }
       } catch (e) {
-        print('❌ TranslationService failed: $e');
+        // TranslationService failed
       }
       
       // Method 2: Google Translate with direct Dio (fallback)
@@ -1030,7 +1026,7 @@ class TmdbService {
               if (translation.isNotEmpty && translation[0] is String) {
                 final translatedText = translation[0] as String;
                 if (translatedText.isNotEmpty && translatedText != originalOverview) {
-                  print('✅ REAL TRANSLATION SUCCESS (Google API): "$translatedText"');
+                  // Google API success
                   return translatedText;
                 }
               }
@@ -1038,7 +1034,7 @@ class TmdbService {
           }
         }
       } catch (e) {
-        print('❌ Google Translate failed: $e');
+        // Google Translate failed
       }
       
       // Method 3: MyMemory API with direct Dio (fallback)
@@ -1056,28 +1052,28 @@ class TmdbService {
           final data = response.data as Map<String, dynamic>;
           final translatedText = data['responseData']?['translatedText'] as String?;
           if (translatedText != null && translatedText.isNotEmpty && translatedText != originalOverview) {
-            print('✅ REAL TRANSLATION SUCCESS (MyMemory): "$translatedText"');
+            // MyMemory success
             return translatedText;
           }
         }
       } catch (e) {
-        print('❌ MyMemory failed: $e');
+        // MyMemory failed
       }
       
       // Method 4: Manual translation for common patterns
       String manualTranslated = _manualTranslatePatterns(originalOverview);
       if (manualTranslated.isNotEmpty && manualTranslated != originalOverview) {
-        print('✅ REAL TRANSLATION SUCCESS (Manual): "$manualTranslated"');
+        // Manual translation success
         return manualTranslated;
       }
       
       // If all translation fails, return original (NOT fallback)
-      print('❌ All translation failed, returning ORIGINAL overview');
+      // All translation failed, returning original
       return originalOverview;
     }
     
     // If no original overview, return original text (NOT EMPTY)
-    print('❌ No original overview, returning original text');
+    // No original overview, returning original text
     return originalOverview;
   }
   
@@ -1142,7 +1138,7 @@ class TmdbService {
     }
     
     if (result != text && result.isNotEmpty) {
-      print('✅ Manual translation successful: "$result"');
+      // Manual translation successful
       return result;
     }
     
@@ -1175,13 +1171,13 @@ class TmdbService {
       final translation = await translator.translate(title, from: 'auto', to: 'vi');
       
       if (translation.text.isNotEmpty && translation.text != title) {
-        print('✅ Title translation success: "${title}" -> "${translation.text}"');
+        // Title translation success
         return translation.text;
       }
       
       return title; // Return original if translation failed
     } catch (e) {
-      print('❌ Title translation error: $e');
+      // Title translation error
       return title;
     }
   }

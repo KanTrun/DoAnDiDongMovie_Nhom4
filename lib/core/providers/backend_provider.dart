@@ -14,19 +14,15 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
   DateTime? _lastRequestTime;
 
   FavoritesNotifier(this.token) : super(const AsyncValue.loading()) {
-    print('DEBUG FAVORITES - FavoritesNotifier created with token: ${token != null}');
     if (token != null) {
-      print('DEBUG FAVORITES - Calling loadFavorites from constructor');
       loadFavorites();
     } else {
-      print('DEBUG FAVORITES - No token, setting empty state');
       state = const AsyncValue.data([]);
     }
   }
 
   // Force reload when needed
   void forceReload() {
-    print('DEBUG FAVORITES - forceReload called');
     if (token != null) {
       loadFavorites();
     }
@@ -42,63 +38,42 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
   }
 
   Future<void> loadFavorites() async {
-    print('DEBUG FAVORITES - loadFavorites called');
     if (token == null) {
-      print('DEBUG FAVORITES - No token, setting empty list');
       state = const AsyncValue.data([]);
       return;
     }
 
-    print('DEBUG FAVORITES - Loading favorites from backend');
     state = const AsyncValue.loading();
     try {
       final favorites = await BackendService.getFavorites(token!);
       state = AsyncValue.data(favorites);
-      print('DEBUG FAVORITES - Loaded ${favorites.length} favorites from backend');
-      for (var fav in favorites) {
-        print('DEBUG FAVORITES - Movie ${fav.movieId} is in favorites');
-      }
     } catch (e, stack) {
-      print('DEBUG FAVORITES - Error loading favorites: $e');
       state = AsyncValue.error(e, stack);
     }
   }
 
   Future<void> addFavorite(int tmdbId, {String mediaType = 'movie'}) async {
     if (!_canMakeRequest()) {
-      print('DEBUG FAVORITES - Rate limiting, skipping request');
       return;
     }
     
-    print('DEBUG FAVORITES - addFavorite called for $mediaType $tmdbId');
-    print('DEBUG FAVORITES - Token available: ${token != null}');
-    
     if (token == null) {
-      print('DEBUG FAVORITES - No token, returning early');
       return;
     }
 
     try {
-      print('DEBUG FAVORITES - Creating AddFavoriteRequest');
       final request = AddFavoriteRequest(tmdbId: tmdbId, mediaType: mediaType);
-      print('DEBUG FAVORITES - Calling BackendService.addFavorite');
       final favorite = await BackendService.addFavorite(token!, request);
-      print('DEBUG FAVORITES - Successfully added favorite: ${favorite.favoriteId}');
       
       state.whenData((favorites) {
         state = AsyncValue.data([...favorites, favorite]);
-        print('DEBUG FAVORITES - Updated state with ${favorites.length + 1} favorites');
       });
     } catch (e, stack) {
-      print('DEBUG FAVORITES - Error adding favorite: $e');
-      
       // Handle 409 (Already exists) error gracefully
       if (e.toString().contains('409') || e.toString().contains('Already in favorites')) {
-        print('DEBUG FAVORITES - Item already in favorites, refreshing list');
         // Add delay to avoid race condition, then refresh
         await Future.delayed(const Duration(milliseconds: 100));
         await loadFavorites(); // Refresh the list to sync with backend
-        print('DEBUG FAVORITES - List refreshed after 409 error');
       } else {
         state = AsyncValue.error(e, stack);
       }
@@ -106,34 +81,23 @@ class FavoritesNotifier extends StateNotifier<AsyncValue<List<Favorite>>> {
   }
 
   Future<void> removeFavorite(int tmdbId, {String mediaType = 'movie'}) async {
-    print('DEBUG FAVORITES - removeFavorite called for $mediaType $tmdbId');
-    print('DEBUG FAVORITES - Token available: ${token != null}');
-    
     if (token == null) {
-      print('DEBUG FAVORITES - No token, returning early');
       return;
     }
 
     try {
-      print('DEBUG FAVORITES - Calling BackendService.removeFavorite');
       await BackendService.removeFavorite(token!, tmdbId, mediaType: mediaType);
-      print('DEBUG FAVORITES - Successfully removed favorite');
       
       state.whenData((favorites) {
         final newFavorites = favorites.where((f) => f.tmdbId != tmdbId).toList();
         state = AsyncValue.data(newFavorites);
-        print('DEBUG FAVORITES - Updated state with ${newFavorites.length} favorites');
       });
     } catch (e, stack) {
-      print('DEBUG FAVORITES - Error removing favorite: $e');
-      
       // Handle 404 (Not found) error gracefully
       if (e.toString().contains('404') || e.toString().contains('Not found')) {
-        print('DEBUG FAVORITES - Item not in favorites, refreshing list');
         // Add delay to avoid race condition, then refresh
         await Future.delayed(const Duration(milliseconds: 100));
         await loadFavorites(); // Refresh the list to sync with backend
-        print('DEBUG FAVORITES - List refreshed after 404 error');
       } else {
         state = AsyncValue.error(e, stack);
       }
@@ -175,19 +139,15 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
   DateTime? _lastRequestTime;
 
   WatchlistNotifier(this.token) : super(const AsyncValue.loading()) {
-    print('DEBUG WATCHLIST - WatchlistNotifier created with token: ${token != null}');
     if (token != null) {
-      print('DEBUG WATCHLIST - Calling loadWatchlist from constructor');
       loadWatchlist();
     } else {
-      print('DEBUG WATCHLIST - No token, setting empty state');
       state = const AsyncValue.data([]);
     }
   }
 
   // Force reload when needed
   void forceReload() {
-    print('DEBUG WATCHLIST - forceReload called');
     if (token != null) {
       loadWatchlist();
     }
@@ -203,63 +163,42 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
   }
 
   Future<void> loadWatchlist() async {
-    print('DEBUG WATCHLIST - loadWatchlist called');
     if (token == null) {
-      print('DEBUG WATCHLIST - No token, setting empty list');
       state = const AsyncValue.data([]);
       return;
     }
 
-    print('DEBUG WATCHLIST - Loading watchlist from backend');
     state = const AsyncValue.loading();
     try {
       final watchlist = await BackendService.getWatchlist(token!);
       state = AsyncValue.data(watchlist);
-      print('DEBUG WATCHLIST - Loaded ${watchlist.length} watchlist items from backend');
-      for (var item in watchlist) {
-        print('DEBUG WATCHLIST - Movie ${item.movieId} is in watchlist');
-      }
     } catch (e, stack) {
-      print('DEBUG WATCHLIST - Error loading watchlist: $e');
       state = AsyncValue.error(e, stack);
     }
   }
 
   Future<void> addToWatchlist(int tmdbId, {String mediaType = 'movie', String? note}) async {
     if (!_canMakeRequest()) {
-      print('DEBUG WATCHLIST - Rate limiting, skipping request');
       return;
     }
     
-    print('DEBUG WATCHLIST - addToWatchlist called for $mediaType $tmdbId');
-    print('DEBUG WATCHLIST - Token available: ${token != null}');
-    
     if (token == null) {
-      print('DEBUG WATCHLIST - No token, returning early');
       return;
     }
 
     try {
-      print('DEBUG WATCHLIST - Creating AddWatchlistRequest');
       final request = AddWatchlistRequest(tmdbId: tmdbId, mediaType: mediaType, note: note);
-      print('DEBUG WATCHLIST - Calling BackendService.addToWatchlist');
       final watchlistItem = await BackendService.addToWatchlist(token!, request);
-      print('DEBUG WATCHLIST - Successfully added to watchlist: ${watchlistItem.watchlistId}');
       
       state.whenData((watchlist) {
         state = AsyncValue.data([...watchlist, watchlistItem]);
-        print('DEBUG WATCHLIST - Updated state with ${watchlist.length + 1} items');
       });
     } catch (e, stack) {
-      print('DEBUG WATCHLIST - Error adding to watchlist: $e');
-      
       // Handle 409 (Already exists) error gracefully
       if (e.toString().contains('409') || e.toString().contains('Already in watchlist')) {
-        print('DEBUG WATCHLIST - Movie already in watchlist, refreshing list');
         // Add delay to avoid race condition, then refresh
         await Future.delayed(const Duration(milliseconds: 100));
         await loadWatchlist(); // Refresh the list to sync with backend
-        print('DEBUG WATCHLIST - List refreshed after 409 error');
       } else {
         state = AsyncValue.error(e, stack);
       }
@@ -267,34 +206,23 @@ class WatchlistNotifier extends StateNotifier<AsyncValue<List<Watchlist>>> {
   }
 
   Future<void> removeFromWatchlist(int tmdbId, {String mediaType = 'movie'}) async {
-    print('DEBUG WATCHLIST - removeFromWatchlist called for $mediaType $tmdbId');
-    print('DEBUG WATCHLIST - Token available: ${token != null}');
-    
     if (token == null) {
-      print('DEBUG WATCHLIST - No token, returning early');
       return;
     }
 
     try {
-      print('DEBUG WATCHLIST - Calling BackendService.removeFromWatchlist');
       await BackendService.removeFromWatchlist(token!, tmdbId, mediaType: mediaType);
-      print('DEBUG WATCHLIST - Successfully removed from watchlist');
       
       state.whenData((watchlist) {
         final newWatchlist = watchlist.where((w) => w.tmdbId != tmdbId).toList();
         state = AsyncValue.data(newWatchlist);
-        print('DEBUG WATCHLIST - Updated state with ${newWatchlist.length} items');
       });
     } catch (e, stack) {
-      print('DEBUG WATCHLIST - Error removing from watchlist: $e');
-      
       // Handle 404 (Not found) error gracefully
       if (e.toString().contains('404') || e.toString().contains('Not found')) {
-        print('DEBUG WATCHLIST - Item not in watchlist, refreshing list');
         // Add delay to avoid race condition, then refresh
         await Future.delayed(const Duration(milliseconds: 100));
         await loadWatchlist(); // Refresh the list to sync with backend
-        print('DEBUG WATCHLIST - List refreshed after 404 error');
       } else {
         state = AsyncValue.error(e, stack);
       }

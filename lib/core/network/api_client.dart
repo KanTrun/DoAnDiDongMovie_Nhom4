@@ -12,27 +12,20 @@ class ApiClient {
       },
     ));
     
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        print('🔍 BACKEND REQUEST: ${options.method} ${options.path}');
-        print('🔑 BACKEND TOKEN: ${token != null ? "Present" : "NULL"}');
-        print('📋 BACKEND QUERY: ${options.queryParameters}');
-        
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        return handler.next(options);
-      },
-      onResponse: (response, handler) {
-        print('✅ BACKEND RESPONSE: ${response.statusCode} - ${response.requestOptions.path}');
-        return handler.next(response);
-      },
-      onError: (error, handler) {
-        print('❌ BACKEND ERROR: ${error.response?.statusCode} - ${error.message}');
-        print('📄 BACKEND ERROR DATA: ${error.response?.data}');
-        return handler.next(error);
-      },
-    ));
+        dio.interceptors.add(InterceptorsWrapper(
+          onRequest: (options, handler) {
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+            return handler.next(options);
+          },
+          onResponse: (response, handler) {
+            return handler.next(response);
+          },
+          onError: (error, handler) {
+            return handler.next(error);
+          },
+        ));
     
     return dio;
   }
@@ -55,20 +48,16 @@ class ApiClient {
           options.queryParameters['language'] = AppConfig.tmdbLanguage;
         }
         
-        print('🔍 TMDB Request: ${options.method} ${options.path}');
-        print('📋 Query params: ${options.queryParameters}');
+        // Debug logs removed
         
         return handler.next(options);
       },
       onResponse: (response, handler) {
-        print('✅ TMDB Response: ${response.statusCode} - ${response.requestOptions.path}');
+        // Debug logs removed
         return handler.next(response);
       },
       onError: (error, handler) {
-        print('❌ TMDB API Error: ${error.response?.statusCode} - ${error.message}');
-        if (error.response?.data != null) {
-          print('📄 Error data: ${error.response?.data}');
-        }
+        // Debug logs removed
         return handler.next(error);
       },
     ));

@@ -24,12 +24,7 @@ class _RatingSectionState extends ConsumerState<RatingSection> {
   @override
   Widget build(BuildContext context) {
     final providerKey = '${widget.tmdbId}_${widget.mediaType}';
-    print('🔍 RATING SECTION - Provider key: $providerKey');
-    print('🔍 RATING SECTION - tmdbId: ${widget.tmdbId}, mediaType: ${widget.mediaType}');
-    
     final ratingState = ref.watch(movieRatingProvider(providerKey));
-    
-    print('🔍 RATING SECTION - State: isLoading=${ratingState.isLoading}, error=${ratingState.error}, rating=${ratingState.rating?.score}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

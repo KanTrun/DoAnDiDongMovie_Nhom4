@@ -581,9 +581,9 @@ class _SearchTabState extends ConsumerState<SearchTab>
       onTap: () {
         // Navigate based on mediaType
         if (movie.mediaType == 'tv') {
-          context.go('/tv/${movie.id}');
+          context.push('/tv/${movie.id}');
         } else {
-          context.go('/movie/${movie.id}');
+          context.push('/movie/${movie.id}');
         }
       },
       child: Container(
@@ -894,9 +894,9 @@ class _SearchTabState extends ConsumerState<SearchTab>
           final mediaType = movie.mediaType ?? 'movie';
           
           if (mediaType == 'tv') {
-            context.go('/tv/${movie.id}');
+            context.push('/tv/${movie.id}');
           } else {
-            context.go('/movie/${movie.id}');
+            context.push('/movie/${movie.id}');
           }
         },
             borderRadius: BorderRadius.circular(10),
@@ -1108,7 +1108,7 @@ class _TranslatableOverviewState extends State<_TranslatableOverview> {
         });
       }
     } catch (e) {
-      print('❌ Auto-translation failed for "${widget.movie.title}": $e');
+      // Auto-translation failed, continue without translation
       setState(() {
         _isTranslating = false;
       });
@@ -1130,13 +1130,7 @@ class _TranslatableOverviewState extends State<_TranslatableOverview> {
       displayText = 'Không có mô tả';
     }
 
-    // Debug log to help troubleshoot
-    print('🔍 _TranslatableOverview for "${widget.movie.title}":');
-    print('  - overview_vi: "${widget.movie.overview_vi}"');
-    print('  - _translatedOverview: "$_translatedOverview"');
-    print('  - overview: "${widget.movie.overview}"');
-    print('  - displayText: "$displayText"');
-    print('  - _isTranslating: $_isTranslating');
+    // Debug logs removed for cleaner console
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

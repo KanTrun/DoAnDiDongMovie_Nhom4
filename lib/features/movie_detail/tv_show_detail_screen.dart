@@ -31,11 +31,11 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
   String _translatedOverview = '';
 
   // ScrollControllers
-  final ScrollController _videoScrollController = ScrollController();
-  final ScrollController _castScrollController = ScrollController();
-  final ScrollController _crewScrollController = ScrollController();
-  final ScrollController _similarTvShowsScrollController = ScrollController();
-  final ScrollController _mainScrollController = ScrollController();
+  late final ScrollController _videoScrollController;
+  late final ScrollController _castScrollController;
+  late final ScrollController _crewScrollController;
+  late final ScrollController _similarTvShowsScrollController;
+  late final ScrollController _mainScrollController;
 
   // Animation Controllers
   late AnimationController _heroAnimationController;
@@ -44,15 +44,25 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
   @override
   void initState() {
     super.initState();
+    
+    // Initialize ScrollControllers only once
+    _videoScrollController = ScrollController();
+    _castScrollController = ScrollController();
+    _crewScrollController = ScrollController();
+    _similarTvShowsScrollController = ScrollController();
+    _mainScrollController = ScrollController();
+    
     _heroAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
 
     _mainScrollController.addListener(() {
-      setState(() {
-        _scrollOffset = _mainScrollController.offset;
-      });
+      if (mounted) {
+        setState(() {
+          _scrollOffset = _mainScrollController.offset;
+        });
+      }
     });
   }
 
@@ -91,7 +101,7 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
             _translatedOverview = translated.isNotEmpty ? translated : _originalOverview;
           });
         } catch (e) {
-          print('❌ Translation failed: $e');
+          // Translation failed, continue without translation
           setState(() {
             _translatedOverview = _originalOverview;
             _isOverviewTranslated = false;
@@ -114,9 +124,7 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
     final authAsync = ref.watch(authProvider);
     final isAuthenticated = authAsync.isAuthenticated;
     
-    print('🔍 AUTH DEBUG - isAuthenticated: $isAuthenticated');
-    print('🔍 AUTH DEBUG - user: ${authAsync.user?.email}');
-    print('🔍 AUTH DEBUG - token: ${authAsync.token != null ? "Present" : "NULL"}');
+    // Auth debug info removed for cleaner logs
 
     return Scaffold(
       backgroundColor: const Color(0xFF141414),
@@ -153,7 +161,7 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
       ),
       body: tvShowDetailsAsync.when(
         data: (tvShow) {
-          print('🔍 DEBUG: TV Show overview in UI: "${tvShow.overview}"');
+          // Debug log removed
           final bottomSafe = MediaQuery.of(context).padding.bottom;
           return SingleChildScrollView(
             controller: _mainScrollController,
@@ -698,7 +706,7 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
   //         OVERVIEW
   // =========================
   Widget _buildOverview(String overview) {
-    print('🔍 DEBUG: _buildOverview called with: "$overview"');
+    // Debug log removed
     if (overview.isEmpty) return const SizedBox.shrink();
     
     // Store original overview on first load

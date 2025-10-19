@@ -5,7 +5,6 @@ import 'auth_provider.dart';
 
 final ratingsServiceProvider = Provider<RatingsService>((ref) {
   final token = ref.read(authTokenProvider);
-  print('🔑 RATINGS SERVICE PROVIDER - Token: ${token != null ? "Present" : "NULL"}');
   return RatingsService(token);
 });
 
@@ -15,12 +14,10 @@ final ratingsProvider = StateNotifierProvider<RatingsNotifier, RatingsState>((re
 });
 
 final movieRatingProvider = StateNotifierProvider.family<MovieRatingNotifier, MovieRatingState, String>((ref, key) {
-  print('🔍 RATINGS PROVIDER - Creating provider for key: $key');
   final ratingsService = ref.read(ratingsServiceProvider);
   final parts = key.split('_');
   final tmdbId = int.parse(parts[0]);
   final mediaType = parts[1];
-  print('🔍 RATINGS PROVIDER - Parsed tmdbId: $tmdbId, mediaType: $mediaType');
   return MovieRatingNotifier(ratingsService, tmdbId, mediaType);
 });
 
@@ -168,20 +165,19 @@ class MovieRatingNotifier extends StateNotifier<MovieRatingState> {
   final String mediaType;
 
   MovieRatingNotifier(this._ratingsService, this.tmdbId, this.mediaType) : super(MovieRatingState()) {
-    print('🔍 RATINGS NOTIFIER - Constructor called for tmdbId: $tmdbId, mediaType: $mediaType');
     loadRating();
   }
 
   Future<void> loadRating() async {
-    print('🔍 RATINGS PROVIDER - Loading rating for tmdbId: $tmdbId, mediaType: $mediaType');
+    // Debug log removed
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final rating = await _ratingsService.getRatingByMovie(tmdbId, mediaType);
-      print('✅ RATINGS PROVIDER - Successfully loaded rating: ${rating?.score}');
+      // Debug log removed
       state = state.copyWith(rating: rating, isLoading: false);
     } catch (e) {
-      print('❌ RATINGS PROVIDER - Error loading rating: $e');
+      // Debug log removed
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),

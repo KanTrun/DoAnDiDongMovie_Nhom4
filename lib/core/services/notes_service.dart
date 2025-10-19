@@ -24,9 +24,6 @@ class NotesService {
 
   Future<List<Note>> getNotesByMovie(int tmdbId, String mediaType) async {
     try {
-      print('🔍 NOTES SERVICE - Getting notes for movie: $tmdbId, mediaType: $mediaType');
-      print('🔑 NOTES SERVICE - Token: ${_token != null ? "Present" : "NULL"}');
-      
       final response = await ApiClient.backend(token: _token).get(
         '/api/notes/movie/$tmdbId',
         queryParameters: {
@@ -34,17 +31,12 @@ class NotesService {
         },
       );
       
-      print('✅ NOTES SERVICE - Response received: ${response.statusCode}');
-      print('📄 NOTES SERVICE - Response data: ${response.data}');
-      
       return (response.data as List)
           .map((noteJson) => Note.fromJson(noteJson))
           .toList();
     } on DioException catch (e) {
-      print('❌ NOTES SERVICE - DioException caught');
       throw _handleError(e);
     } catch (e) {
-      print('❌ NOTES SERVICE - General exception: $e');
       throw e.toString();
     }
   }
@@ -95,11 +87,8 @@ class NotesService {
   }
 
   String _handleError(DioException e) {
-    print('❌ NOTES SERVICE ERROR:');
-    print('   Status: ${e.response?.statusCode}');
-    print('   Message: ${e.message}');
-    print('   Data: ${e.response?.data}');
-    print('   Headers: ${e.response?.headers}');
+    // Debug log removed
+    // Debug logs removed
     
     if (e.response != null) {
       final data = e.response!.data;

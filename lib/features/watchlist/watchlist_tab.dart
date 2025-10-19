@@ -539,9 +539,9 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
             data: (mediaDetail) => InkWell(
               onTap: () {
                 if ((watchlistItem.mediaType ?? 'movie') == 'tv') {
-                  context.go('/tv/${watchlistItem.tmdbId}');
+                  context.push('/tv/${watchlistItem.tmdbId}');
                 } else {
-                  context.go('/movie/${watchlistItem.tmdbId}');
+                  context.push('/movie/${watchlistItem.tmdbId}');
                 }
               },
               borderRadius: BorderRadius.circular(12),

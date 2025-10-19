@@ -59,10 +59,10 @@ class _TranslatableOverviewCardState extends State<TranslatableOverviewCard> {
           _isTranslating = false;
         });
         
-        print('✅ Auto-translation completed: "${translated.substring(0, translated.length > 50 ? 50 : translated.length)}..."');
+        // Auto-translation completed
       }
     } catch (e) {
-      print('❌ Auto-translation failed: $e');
+      // Auto-translation failed
       if (mounted) {
         setState(() {
           _isTranslating = false;

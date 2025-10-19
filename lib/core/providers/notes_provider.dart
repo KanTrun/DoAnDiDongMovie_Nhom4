@@ -5,7 +5,6 @@ import 'auth_provider.dart';
 
 final notesServiceProvider = Provider<NotesService>((ref) {
   final token = ref.read(authTokenProvider);
-  print('🔑 NOTES SERVICE PROVIDER - Token: ${token != null ? "Present" : "NULL"}');
   return NotesService(token);
 });
 
@@ -15,12 +14,10 @@ final notesProvider = StateNotifierProvider<NotesNotifier, NotesState>((ref) {
 });
 
 final movieNotesProvider = StateNotifierProvider.family<MovieNotesNotifier, MovieNotesState, String>((ref, key) {
-  print('🔍 NOTES PROVIDER - Creating provider for key: $key');
   final notesService = ref.read(notesServiceProvider);
   final parts = key.split('_');
   final tmdbId = int.parse(parts[0]);
   final mediaType = parts[1];
-  print('🔍 NOTES PROVIDER - Parsed tmdbId: $tmdbId, mediaType: $mediaType');
   return MovieNotesNotifier(notesService, tmdbId, mediaType);
 });
 
@@ -176,20 +173,19 @@ class MovieNotesNotifier extends StateNotifier<MovieNotesState> {
   final String mediaType;
 
   MovieNotesNotifier(this._notesService, this.tmdbId, this.mediaType) : super(MovieNotesState()) {
-    print('🔍 NOTES NOTIFIER - Constructor called for tmdbId: $tmdbId, mediaType: $mediaType');
     loadNotes();
   }
 
   Future<void> loadNotes() async {
-    print('🔍 NOTES PROVIDER - Loading notes for tmdbId: $tmdbId, mediaType: $mediaType');
+    // Debug log removed
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final notes = await _notesService.getNotesByMovie(tmdbId, mediaType);
-      print('✅ NOTES PROVIDER - Successfully loaded ${notes.length} notes');
+      // Debug log removed
       state = state.copyWith(notes: notes, isLoading: false);
     } catch (e) {
-      print('❌ NOTES PROVIDER - Error loading notes: $e');
+      // Debug log removed
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),

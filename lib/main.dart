@@ -27,7 +27,7 @@ void main() async {
   // Initialize translation service
   try {
     await TranslationService().initialize();
-    print('✅ Translation service initialized successfully');
+    // Translation service initialized
   } catch (e) {
     print('⚠️  Translation service initialization failed: $e');
     // Continue without translation service

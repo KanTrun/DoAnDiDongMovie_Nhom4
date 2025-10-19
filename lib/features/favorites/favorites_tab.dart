@@ -542,9 +542,9 @@ class _FavoritesTabState extends ConsumerState<FavoritesTab> {
             data: (mediaDetail) => InkWell(
               onTap: () {
                 if ((favorite.mediaType ?? 'movie') == 'tv') {
-                  context.go('/tv/${favorite.tmdbId}');
+                  context.push('/tv/${favorite.tmdbId}');
                 } else {
-                  context.go('/movie/${favorite.tmdbId}');
+                  context.push('/movie/${favorite.tmdbId}');
                 }
               },
               borderRadius: BorderRadius.circular(12),

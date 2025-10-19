@@ -24,9 +24,6 @@ class RatingsService {
 
   Future<Rating?> getRatingByMovie(int tmdbId, String mediaType) async {
     try {
-      print('🔍 RATINGS SERVICE - Getting rating for movie: $tmdbId, mediaType: $mediaType');
-      print('🔑 RATINGS SERVICE - Token: ${_token != null ? "Present" : "NULL"}');
-      
       final response = await ApiClient.backend(token: _token).get(
         '/api/ratings/movie/$tmdbId',
         queryParameters: {
@@ -34,19 +31,13 @@ class RatingsService {
         },
       );
       
-      print('✅ RATINGS SERVICE - Response received: ${response.statusCode}');
-      print('📄 RATINGS SERVICE - Response data: ${response.data}');
-      
       return Rating.fromJson(response.data);
     } on DioException catch (e) {
-      print('❌ RATINGS SERVICE - DioException caught: ${e.response?.statusCode}');
       if (e.response?.statusCode == 404) {
-        print('📭 RATINGS SERVICE - No rating found (404)');
         return null;
       }
       throw _handleError(e);
     } catch (e) {
-      print('❌ RATINGS SERVICE - General exception: $e');
       throw e.toString();
     }
   }
@@ -80,11 +71,8 @@ class RatingsService {
   }
 
   String _handleError(DioException e) {
-    print('❌ RATINGS SERVICE ERROR:');
-    print('   Status: ${e.response?.statusCode}');
-    print('   Message: ${e.message}');
-    print('   Data: ${e.response?.data}');
-    print('   Headers: ${e.response?.headers}');
+    // Debug log removed
+    // Debug logs removed
     
     if (e.response != null) {
       final data = e.response!.data;

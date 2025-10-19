@@ -5,11 +5,8 @@ import '../network/api_client.dart';
 class BackendService {
   // Favorites
   static Future<List<Favorite>> getFavorites(String token) async {
-    print('DEBUG BACKEND - getFavorites called with token: ${token.substring(0, 50)}...');
     try {
-      final response = await ApiClient.backend(token: token).get('/favorites');
-      print('DEBUG BACKEND - getFavorites response status: ${response.statusCode}');
-      print('DEBUG BACKEND - getFavorites response data: ${response.data}');
+      final response = await ApiClient.backend(token: token).get('/api/favorites');
       
       // Handle both List and object responses
       dynamic data = response.data;
@@ -22,7 +19,6 @@ class BackendService {
       }
       
       if (data is! List) {
-        print('DEBUG BACKEND - Data is not a List, type: ${data.runtimeType}');
         return []; // Return empty list if data is not a list
       }
       
@@ -30,14 +26,10 @@ class BackendService {
           .map<Favorite>((json) => Favorite.fromJson(json))
           .toList();
           
-      print('DEBUG BACKEND - Parsed ${favorites.length} favorites');
       return favorites;
     } on DioException catch (e) {
-      print('DEBUG BACKEND - DioException in getFavorites: ${e.response?.statusCode} - ${e.message}');
-      print('DEBUG BACKEND - Response data: ${e.response?.data}');
       throw _handleError(e);
     } catch (e) {
-      print('DEBUG BACKEND - Exception in getFavorites: $e');
       // Handle any other errors and return empty list
       return [];
     }
@@ -46,7 +38,7 @@ class BackendService {
   static Future<Favorite> addFavorite(String token, AddFavoriteRequest request) async {
     try {
       await ApiClient.backend(token: token).post(
-        '/favorites',
+        '/api/favorites',
         data: request.toJson(),
       );
       
@@ -84,11 +76,8 @@ class BackendService {
 
   // Watchlist
   static Future<List<Watchlist>> getWatchlist(String token) async {
-    print('DEBUG BACKEND - getWatchlist called with token: ${token.substring(0, 50)}...');
     try {
-      final response = await ApiClient.backend(token: token).get('/watchlist');
-      print('DEBUG BACKEND - getWatchlist response status: ${response.statusCode}');
-      print('DEBUG BACKEND - getWatchlist response data: ${response.data}');
+      final response = await ApiClient.backend(token: token).get('/api/watchlist');
       
       // Handle both List and object responses
       dynamic data = response.data;
@@ -101,7 +90,6 @@ class BackendService {
       }
       
       if (data is! List) {
-        print('DEBUG BACKEND - Data is not a List, type: ${data.runtimeType}');
         return []; // Return empty list if data is not a list
       }
       
@@ -109,14 +97,10 @@ class BackendService {
           .map<Watchlist>((json) => Watchlist.fromJson(json))
           .toList();
           
-      print('DEBUG BACKEND - Parsed ${watchlist.length} watchlist items');
       return watchlist;
     } on DioException catch (e) {
-      print('DEBUG BACKEND - DioException in getWatchlist: ${e.response?.statusCode} - ${e.message}');
-      print('DEBUG BACKEND - Response data: ${e.response?.data}');
       throw _handleError(e);
     } catch (e) {
-      print('DEBUG BACKEND - Exception in getWatchlist: $e');
       // Handle any other errors and return empty list
       return [];
     }
@@ -125,7 +109,7 @@ class BackendService {
   static Future<Watchlist> addToWatchlist(String token, AddWatchlistRequest request) async {
     try {
       await ApiClient.backend(token: token).post(
-        '/watchlist',
+        '/api/watchlist',
         data: request.toJson(),
       );
       
@@ -165,7 +149,7 @@ class BackendService {
   // Notes
   static Future<List<Note>> getNotes(String token) async {
     try {
-      final response = await ApiClient.backend(token: token).get('/notes');
+      final response = await ApiClient.backend(token: token).get('/api/notes');
       
       // Handle both List and object responses
       dynamic data = response.data;
@@ -217,7 +201,7 @@ class BackendService {
   static Future<Note> addNote(String token, AddNoteRequest request) async {
     try {
       final response = await ApiClient.backend(token: token).post(
-        '/notes',
+        '/api/notes',
         data: request.toJson(),
       );
       return Note.fromJson(response.data);
@@ -249,7 +233,7 @@ class BackendService {
   // History
   static Future<List<History>> getHistory(String token) async {
     try {
-      final response = await ApiClient.backend(token: token).get('/history');
+      final response = await ApiClient.backend(token: token).get('/api/history');
       return (response.data as List)
           .map((json) => History.fromJson(json))
           .toList();
@@ -261,7 +245,7 @@ class BackendService {
   static Future<History> addToHistory(String token, AddHistoryRequest request) async {
     try {
       final response = await ApiClient.backend(token: token).post(
-        '/history',
+        '/api/history',
         data: request.toJson(),
       );
       return History.fromJson(response.data);
@@ -272,7 +256,7 @@ class BackendService {
 
   static Future<void> clearHistory(String token) async {
     try {
-      await ApiClient.backend(token: token).delete('/history');
+      await ApiClient.backend(token: token).delete('/api/history');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -281,7 +265,7 @@ class BackendService {
   // Ratings
   static Future<List<Rating>> getRatings(String token) async {
     try {
-      final response = await ApiClient.backend(token: token).get('/ratings');
+      final response = await ApiClient.backend(token: token).get('/api/ratings');
       return (response.data as List)
           .map((json) => Rating.fromJson(json))
           .toList();
@@ -293,7 +277,7 @@ class BackendService {
   static Future<Rating> addRating(String token, AddRatingRequest request) async {
     try {
       final response = await ApiClient.backend(token: token).post(
-        '/ratings',
+        '/api/ratings',
         data: request.toJson(),
       );
       return Rating.fromJson(response.data);

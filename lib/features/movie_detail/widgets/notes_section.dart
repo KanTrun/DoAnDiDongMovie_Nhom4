@@ -30,12 +30,7 @@ class _NotesSectionState extends ConsumerState<NotesSection> {
   @override
   Widget build(BuildContext context) {
     final providerKey = '${widget.tmdbId}_${widget.mediaType}';
-    print('🔍 NOTES SECTION - Provider key: $providerKey');
-    print('🔍 NOTES SECTION - tmdbId: ${widget.tmdbId}, mediaType: ${widget.mediaType}');
-    
     final notesState = ref.watch(movieNotesProvider(providerKey));
-    
-    print('🔍 NOTES SECTION - State: isLoading=${notesState.isLoading}, error=${notesState.error}, notesCount=${notesState.notes.length}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

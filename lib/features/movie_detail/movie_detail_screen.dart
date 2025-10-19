@@ -32,10 +32,10 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
   String _translatedOverview = '';
 
   // ScrollControllers
-  final ScrollController _videoScrollController = ScrollController();
-  final ScrollController _castScrollController = ScrollController();
-  final ScrollController _similarMoviesScrollController = ScrollController();
-  final ScrollController _mainScrollController = ScrollController();
+  late final ScrollController _videoScrollController;
+  late final ScrollController _castScrollController;
+  late final ScrollController _similarMoviesScrollController;
+  late final ScrollController _mainScrollController;
 
   // Animation Controllers
   late AnimationController _heroAnimationController;
@@ -44,15 +44,24 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
   @override
   void initState() {
     super.initState();
+    
+    // Initialize ScrollControllers only once
+    _videoScrollController = ScrollController();
+    _castScrollController = ScrollController();
+    _similarMoviesScrollController = ScrollController();
+    _mainScrollController = ScrollController();
+    
     _heroAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
 
     _mainScrollController.addListener(() {
-      setState(() {
-        _scrollOffset = _mainScrollController.offset;
-      });
+      if (mounted) {
+        setState(() {
+          _scrollOffset = _mainScrollController.offset;
+        });
+      }
     });
   }
 
@@ -90,7 +99,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
             _translatedOverview = translated.isNotEmpty ? translated : _originalOverview;
           });
         } catch (e) {
-          print('❌ Translation failed: $e');
+          // Translation failed, continue without translation
           setState(() {
             _translatedOverview = _originalOverview;
             _isOverviewTranslated = false;
@@ -511,7 +520,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
   //         OVERVIEW
   // =========================
   Widget _buildOverview(String overview) {
-    print('🔍 DEBUG: _buildOverview called with: "$overview"');
+    // Debug log removed
     if (overview.isEmpty) return const SizedBox.shrink();
     
     // Store original overview on first load
@@ -1167,9 +1176,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
     final authAsync = ref.watch(authProvider);
     final isAuthenticated = authAsync.isAuthenticated;
     
-    print('🔍 AUTH DEBUG - isAuthenticated: $isAuthenticated');
-    print('🔍 AUTH DEBUG - user: ${authAsync.user?.email}');
-    print('🔍 AUTH DEBUG - token: ${authAsync.token != null ? "Present" : "NULL"}');
+    // Auth debug info removed for cleaner logs
 
     return Scaffold(
       backgroundColor: const Color(0xFF141414),
@@ -1206,7 +1213,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
       ),
       body: movieDetailsAsync.when(
         data: (movie) {
-          print('🔍 DEBUG: Movie overview in UI: "${movie.overview}"');
+          // Debug log removed
           final bottomSafe = MediaQuery.of(context).padding.bottom;
           return SingleChildScrollView(
             controller: _mainScrollController,

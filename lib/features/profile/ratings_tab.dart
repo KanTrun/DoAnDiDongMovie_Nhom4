@@ -300,9 +300,9 @@ class _RatingsTabState extends ConsumerState<RatingsTab> {
 
   void _viewMovie(int tmdbId, String mediaType) {
     if (mediaType == 'tv') {
-      context.go('/tv/$tmdbId');
+      context.push('/tv/$tmdbId');
     } else {
-      context.go('/movie/$tmdbId');
+      context.push('/movie/$tmdbId');
     }
   }
 

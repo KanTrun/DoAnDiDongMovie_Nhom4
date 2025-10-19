@@ -14,7 +14,7 @@ class AdminService {
       dio.options.headers['Authorization'] = 'Bearer $token';
       dio.options.headers['Content-Type'] = 'application/json';
 
-      final response = await dio.get('/admin/users');
+      final response = await dio.get('/api/admin/users');
       
       if (response.statusCode == 200) {
         final List<dynamic> usersJson = response.data;
@@ -37,7 +37,7 @@ class AdminService {
       dio.options.headers['Authorization'] = 'Bearer $token';
       dio.options.headers['Content-Type'] = 'application/json';
 
-      final response = await dio.get('/admin/stats');
+      final response = await dio.get('/api/admin/stats');
       
       if (response.statusCode == 200) {
         return AdminStats.fromJson(response.data);
@@ -60,7 +60,7 @@ class AdminService {
       dio.options.headers['Content-Type'] = 'application/json';
 
       final response = await dio.put(
-        '/admin/users/$userId/role',
+        '/api/admin/users/$userId/role',
         data: {'role': role},
       );
       
@@ -82,7 +82,7 @@ class AdminService {
       dio.options.headers['Authorization'] = 'Bearer $token';
       dio.options.headers['Content-Type'] = 'application/json';
 
-      final response = await dio.delete('/admin/users/$userId');
+      final response = await dio.delete('/api/admin/users/$userId');
       
       if (response.statusCode != 200) {
         throw Exception('Không thể xóa người dùng: ${response.statusMessage}');
