@@ -6,6 +6,7 @@ import '../../core/widgets/subtitle_overlay.dart';
 import '../../core/providers/tmdb_provider.dart';
 import '../../core/providers/backend_provider.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/history_provider.dart' as history_providers;
 import '../../core/models/movie.dart';
 import '../person/person_detail_screen.dart';
 import 'widgets/notes_section.dart';
@@ -64,6 +65,23 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
         });
       }
     });
+
+    // Log DetailOpen event
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _logDetailOpen();
+    });
+  }
+
+  void _logDetailOpen() {
+    final isAuthenticated = ref.read(isAuthenticatedProvider);
+    if (isAuthenticated) {
+      ref.read(history_providers.historyProvider.notifier).logEvent(
+        tmdbId: widget.tvShowId,
+        mediaType: 'tv',
+        action: 'DetailOpen',
+        extra: {'ref': 'TvShowDetail'},
+      );
+    }
   }
 
   @override

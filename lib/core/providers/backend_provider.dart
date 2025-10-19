@@ -390,7 +390,7 @@ class HistoryNotifier extends StateNotifier<AsyncValue<List<History>>> {
       
       state.whenData((history) {
         // Remove existing entry if exists and add new one at the beginning
-        final filteredHistory = history.where((h) => h.movieId != movieId).toList();
+        final filteredHistory = history.where((h) => h.tmdbId != movieId).toList();
         state = AsyncValue.data([historyItem, ...filteredHistory]);
       });
     } catch (e, stack) {

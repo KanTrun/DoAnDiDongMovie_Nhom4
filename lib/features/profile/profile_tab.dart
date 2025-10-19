@@ -9,8 +9,10 @@ import '../admin/admin_dashboard_screen.dart';
 import 'settings_tab.dart';
 import 'notes_tab.dart';
 import 'ratings_tab.dart';
+import 'history_tab.dart';
 import '../../core/providers/notes_provider.dart' as notes_providers;
 import '../../core/providers/ratings_provider.dart' as ratings_providers;
+import '../../core/providers/history_provider.dart' as history_providers;
 
 class ProfileTab extends ConsumerWidget {
   const ProfileTab({super.key});
@@ -287,6 +289,31 @@ class ProfileTab extends ConsumerWidget {
                   );
                 },
               ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                title: 'Lịch sử',
+                count: ref.watch(history_providers.historyProvider).maybeWhen(
+                  data: (histories) => histories.length,
+                  orElse: () => 0,
+                ),
+                color: Colors.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HistoryTab()),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(), // Empty space for alignment
             ),
           ],
         ),

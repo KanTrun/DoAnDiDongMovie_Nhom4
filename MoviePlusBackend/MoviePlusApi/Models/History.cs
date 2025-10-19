@@ -17,16 +17,15 @@ namespace MoviePlusApi.Models
 
         [Required]
         [MaxLength(10)]
-        public string MediaType { get; set; } = string.Empty; // 'movie' or 'tv'
+        public string MediaType { get; set; } = "movie"; // "movie" | "tv"
 
         public DateTime WatchedAt { get; set; } = DateTime.UtcNow;
 
         [Required]
-        [MaxLength(30)]
-        public string Action { get; set; } = string.Empty; // 'open_detail', 'play_trailer', 'finish_trailer'
+        [MaxLength(32)]
+        public string Action { get; set; } = string.Empty; // enum: TrailerView, DetailOpen, ProviderClick, etc.
 
-        [MaxLength(1000)]
-        public string? Extra { get; set; } // JSON data for analytics
+        public string? Extra { get; set; } // JSON metadata (NVARCHAR(MAX))
 
         // Navigation property
         public virtual User User { get; set; } = null!;

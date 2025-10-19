@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MoviePlusApi.Data;
 
@@ -11,9 +12,11 @@ using MoviePlusApi.Data;
 namespace MoviePlusApi.Migrations
 {
     [DbContext(typeof(MoviePlusContext))]
-    partial class MoviePlusContextModelSnapshot : ModelSnapshot
+    [Migration("20251019102118_AddHistoryConstraintsAndIndexes")]
+    partial class AddHistoryConstraintsAndIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,11 +70,12 @@ namespace MoviePlusApi.Migrations
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Extra")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("MediaType")
                         .IsRequired()
@@ -91,17 +95,13 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "WatchedAt")
-                        .HasDatabaseName("IX_Histories_User_Time");
-
-                    b.HasIndex("TmdbId", "MediaType", "Action", "WatchedAt")
-                        .HasDatabaseName("IX_Histories_Tmdb_Action");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Histories", t =>
                         {
-                            t.HasCheckConstraint("CK_Histories_Action", "Action IN ('TrailerView','DetailOpen','ProviderClick','NoteCreated','RatingGiven','FavoriteAdded','FavoriteRemoved','WatchlistAdded','WatchlistRemoved','ShareClick')");
+                            t.HasCheckConstraint("CK_Hist_Action", "Action IN ('open_detail','play_trailer','finish_trailer')");
 
-                            t.HasCheckConstraint("CK_Histories_Media", "MediaType IN ('movie','tv')");
+                            t.HasCheckConstraint("CK_Hist_Media", "MediaType IN ('movie','tv')");
                         });
                 });
 

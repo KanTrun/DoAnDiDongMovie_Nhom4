@@ -79,9 +79,18 @@ namespace MoviePlusApi.Data
             modelBuilder.Entity<History>(entity =>
             {
                 entity.HasKey(e => e.Id);
+                entity.Property(e => e.MediaType).HasMaxLength(10).IsRequired();
+                entity.Property(e => e.Action).HasMaxLength(32).IsRequired();
                 entity.Property(e => e.WatchedAt).HasDefaultValueSql("SYSUTCDATETIME()");
-                entity.HasCheckConstraint("CK_Hist_Media", "MediaType IN ('movie','tv')");
-                entity.HasCheckConstraint("CK_Hist_Action", "Action IN ('open_detail','play_trailer','finish_trailer')");
+                
+                // Indexes for performance
+                entity.HasIndex(e => new { e.UserId, e.WatchedAt }).HasDatabaseName("IX_Histories_User_Time");
+                entity.HasIndex(e => new { e.TmdbId, e.MediaType, e.Action, e.WatchedAt }).HasDatabaseName("IX_Histories_Tmdb_Action");
+                
+                // Constraints
+                entity.HasCheckConstraint("CK_Histories_Media", "MediaType IN ('movie','tv')");
+                entity.HasCheckConstraint("CK_Histories_Action", 
+                    "Action IN ('TrailerView','DetailOpen','ProviderClick','NoteCreated','RatingGiven','FavoriteAdded','FavoriteRemoved','WatchlistAdded','WatchlistRemoved','ShareClick')");
                 
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Histories)

@@ -128,37 +128,6 @@ class Note {
   }
 }
 
-class History {
-  final String historyId;
-  final String userId;
-  final int movieId;
-  final DateTime watchedAt;
-
-  History({
-    required this.historyId,
-    required this.userId,
-    required this.movieId,
-    required this.watchedAt,
-  });
-
-  factory History.fromJson(Map<String, dynamic> json) {
-    return History(
-      historyId: json['historyId'] ?? '',
-      userId: json['userId'] ?? '',
-      movieId: json['movieId'] ?? 0,
-      watchedAt: DateTime.parse(json['watchedAt']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'historyId': historyId,
-      'userId': userId,
-      'movieId': movieId,
-      'watchedAt': watchedAt.toIso8601String(),
-    };
-  }
-}
 
 class Rating {
   final String ratingId;
@@ -350,5 +319,63 @@ class AdminStats {
       totalRatings: json['totalRatings'] ?? 0,
       recentUsers: json['recentUsers'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'totalUsers': totalUsers,
+      'totalAdmins': totalAdmins,
+      'totalRegularUsers': totalRegularUsers,
+      'totalFavorites': totalFavorites,
+      'totalWatchlists': totalWatchlists,
+      'totalNotes': totalNotes,
+      'totalHistories': totalHistories,
+      'totalRatings': totalRatings,
+      'recentUsers': recentUsers,
+    };
+  }
+}
+
+class History {
+  final int id;
+  final String userId;
+  final int tmdbId;
+  final String mediaType; // "movie" | "tv"
+  final DateTime watchedAt;
+  final String action; // TrailerView, DetailOpen, ProviderClick, etc.
+  final String? extra; // JSON metadata
+
+  History({
+    required this.id,
+    required this.userId,
+    required this.tmdbId,
+    required this.mediaType,
+    required this.watchedAt,
+    required this.action,
+    this.extra,
+  });
+
+  factory History.fromJson(Map<String, dynamic> json) {
+    return History(
+      id: json['id'] ?? 0,
+      userId: json['userId'] ?? '',
+      tmdbId: json['tmdbId'] ?? 0,
+      mediaType: json['mediaType'] ?? 'movie',
+      watchedAt: DateTime.parse(json['watchedAt']),
+      action: json['action'] ?? '',
+      extra: json['extra'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'tmdbId': tmdbId,
+      'mediaType': mediaType,
+      'watchedAt': watchedAt.toIso8601String(),
+      'action': action,
+      'extra': extra,
+    };
   }
 }

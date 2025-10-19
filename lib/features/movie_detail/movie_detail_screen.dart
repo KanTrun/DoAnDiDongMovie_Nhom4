@@ -7,6 +7,7 @@ import '../../core/widgets/subtitle_overlay.dart';
 import '../../core/providers/tmdb_provider.dart';
 import '../../core/providers/backend_provider.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/history_provider.dart' as history_providers;
 import '../../core/models/movie.dart';
 import '../person/person_detail_screen.dart';
 import 'widgets/notes_section.dart';
@@ -63,6 +64,23 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
         });
       }
     });
+
+    // Log DetailOpen event
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _logDetailOpen();
+    });
+  }
+
+  void _logDetailOpen() {
+    final isAuthenticated = ref.read(isAuthenticatedProvider);
+    if (isAuthenticated) {
+      ref.read(history_providers.historyProvider.notifier).logEvent(
+        tmdbId: widget.movieId,
+        mediaType: 'movie',
+        action: 'DetailOpen',
+        extra: {'ref': 'MovieDetail'},
+      );
+    }
   }
 
   @override
@@ -1126,6 +1144,21 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
   //     POPUP TRAILER
   // =========================
   Future<void> _openTrailerDialog(String videoId, String title) async {
+    // Log TrailerView event
+    final isAuthenticated = ref.read(isAuthenticatedProvider);
+    if (isAuthenticated) {
+      ref.read(history_providers.historyProvider.notifier).logEvent(
+        tmdbId: widget.movieId,
+        mediaType: 'movie',
+        action: 'TrailerView',
+        extra: {
+          'videoId': videoId,
+          'title': title,
+          'source': 'MovieDetail',
+        },
+      );
+    }
+
     final controller = YoutubePlayerController.fromVideoId(
       videoId: videoId,
       autoPlay: true,
