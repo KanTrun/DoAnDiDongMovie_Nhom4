@@ -5,8 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/movie.dart';
 import '../../core/providers/tmdb_provider.dart';
 import '../../core/services/translation_service.dart';
-import '../movie_detail/movie_detail_screen.dart';
-import '../movie_detail/tv_show_detail_screen.dart';
+import '../../core/widgets/speech_to_text_widget.dart';
 
 class SearchTab extends ConsumerStatefulWidget {
   const SearchTab({super.key});
@@ -178,8 +177,27 @@ class _SearchTabState extends ConsumerState<SearchTab>
                                           : Colors.white.withOpacity(0.6),
                                       size: 20,
                                     ),
-                                    suffixIcon: _searchController.text.isNotEmpty
-                                        ? IconButton(
+                                    suffixIcon: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Speech to text widget
+                                        SpeechToTextWidget(
+                                          onTextRecognized: (text) {
+                                            print('Speech recognized: $text'); // Debug log
+                                            _searchController.text = text;
+                                            setState(() {});
+                                            // Trigger search if text is not empty
+                                            if (text.isNotEmpty) {
+                                              // Force rebuild to show search results
+                                              setState(() {});
+                                            }
+                                          },
+                                          isEnabled: _isSearchFocused,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        // Clear button
+                                        if (_searchController.text.isNotEmpty)
+                                          IconButton(
                                             icon: Icon(
                                               Icons.clear,
                                               color: Colors.white.withOpacity(0.6),
@@ -189,8 +207,9 @@ class _SearchTabState extends ConsumerState<SearchTab>
                                               _searchController.clear();
                                               setState(() {});
                                             },
-                                          )
-                                        : null,
+                                          ),
+                                      ],
+                                    ),
                                     border: InputBorder.none,
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16,

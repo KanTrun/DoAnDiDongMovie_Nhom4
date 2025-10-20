@@ -4,6 +4,9 @@
     <!-- Biometric permission for Android 9 (P) and below; on Android 10+ use BiometricPrompt -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <!-- Speech to text permissions -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MICROPHONE" />
     
     <application
         android:label="doandidongmobile_nhom4"
