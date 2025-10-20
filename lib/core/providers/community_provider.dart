@@ -475,18 +475,17 @@ final notificationsProvider = StateNotifierProvider<NotificationsNotifier, Async
 });
 
 // Follow status provider
-final followStatusProvider = FutureProvider.family<bool, String>((ref, userId) async {
-  final token = ref.watch(authTokenProvider);
-  if (token == null) return false;
-  
-  try {
-    // TODO: Implement actual follow status check
-    // return await FollowsService.isFollowing(token, userId);
-    return false; // Default to not following
-  } catch (e) {
-    return false;
-  }
-});
+  final followStatusProvider = FutureProvider.family<bool, String>((ref, userId) async {
+    final token = ref.watch(authTokenProvider);
+    if (token == null) return false;
+    
+    try {
+      final result = await FollowsService.isFollowing(token, userId);
+      return result;
+    } catch (e) {
+      return false;
+    }
+  });
 
 // Follow statistics provider
 final followStatsProvider = FutureProvider<Map<String, int>>((ref) async {
@@ -494,11 +493,8 @@ final followStatsProvider = FutureProvider<Map<String, int>>((ref) async {
   if (token == null) return {'following': 0, 'followers': 0};
   
   try {
-    // TODO: Implement actual follow statistics
-    // final following = await FollowsService.getFollowingCount(token);
-    // final followers = await FollowsService.getFollowersCount(token);
-    // return {'following': following, 'followers': followers};
-    return {'following': 0, 'followers': 0}; // Default values
+    final stats = await FollowsService.getUserFollowStats(token);
+    return stats;
   } catch (e) {
     return {'following': 0, 'followers': 0};
   }

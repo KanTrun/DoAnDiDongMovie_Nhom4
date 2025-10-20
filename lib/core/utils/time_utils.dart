@@ -19,12 +19,6 @@ class TimeUtils {
     final now = DateTime.now();
     final difference = now.difference(localDateTime);
 
-    // Debug print to help diagnose issues
-    print('DEBUG TimeUtils:');
-    print('  Original UTC: $dateTime');
-    print('  Local time: $localDateTime');
-    print('  Now: $now');
-    print('  Difference: ${difference.inMinutes} minutes');
 
     if (difference.inDays > 0) {
       return '${difference.inDays} ngày trước';

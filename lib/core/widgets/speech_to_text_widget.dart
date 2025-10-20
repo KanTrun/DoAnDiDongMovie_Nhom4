@@ -97,19 +97,15 @@ class _SpeechToTextWidgetState extends State<SpeechToTextWidget>
         
         if (isVietnameseSupported) {
           _currentLanguage = 'vi_VN';
-          _showSuccessSnackBar('Nhận dạng giọng nói đã sẵn sàng! (Hỗ trợ tiếng Việt)');
         } else if (isEnglishSupported) {
           _currentLanguage = 'en_US';
-          _showSuccessSnackBar('Nhận dạng giọng nói đã sẵn sàng! (Sử dụng tiếng Anh)');
         } else {
           // Fallback to first available locale or default
           if (locales.isNotEmpty) {
             _currentLanguage = locales.first.localeId;
-            _showSuccessSnackBar('Nhận dạng giọng nói đã sẵn sàng! (Sử dụng ${locales.first.localeId})');
           } else {
             // Use system default
             _currentLanguage = 'en_US';
-            _showSuccessSnackBar('Nhận dạng giọng nói đã sẵn sàng! (Sử dụng mặc định)');
           }
         }
         

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/post.dart';
 import '../../../core/utils/time_utils.dart';
+import '../../../core/providers/community_provider.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends ConsumerWidget {
   final PostListItem post;
   final VoidCallback? onLike;
   final VoidCallback? onComment;
@@ -10,7 +12,6 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onFollow;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-  final bool isFollowing;
   final bool isOwner;
 
   const PostCard({
@@ -22,12 +23,18 @@ class PostCard extends StatelessWidget {
     this.onFollow,
     this.onEdit,
     this.onDelete,
-    this.isFollowing = false,
     this.isOwner = false,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final followStatus = ref.watch(followStatusProvider(post.userId));
+    final isFollowing = followStatus.when(
+      data: (isFollowing) => isFollowing,
+      loading: () => false,
+      error: (_, __) => false,
+    );
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -106,19 +113,36 @@ class PostCard extends StatelessWidget {
                     child: const Icon(Icons.more_vert),
                   )
                 else if (onFollow != null)
-                  TextButton(
-                    onPressed: onFollow,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isFollowing 
+                          ? Colors.grey[300] 
+                          : Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isFollowing 
+                            ? Colors.grey[400]! 
+                            : Theme.of(context).primaryColor,
+                        width: 1,
+                      ),
                     ),
-                    child: Text(
-                      isFollowing ? 'Đang theo dõi' : 'Theo dõi',
-                      style: TextStyle(
-                        color: isFollowing ? Colors.grey[600] : Theme.of(context).primaryColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                    child: TextButton(
+                      onPressed: onFollow,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        isFollowing ? 'Đang theo dõi' : 'Theo dõi',
+                        style: TextStyle(
+                          color: isFollowing ? Colors.grey[700] : Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

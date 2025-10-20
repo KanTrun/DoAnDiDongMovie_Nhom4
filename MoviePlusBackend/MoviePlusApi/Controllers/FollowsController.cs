@@ -188,6 +188,24 @@ namespace MoviePlusApi.Controllers
             });
         }
 
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetFollowStats()
+        {
+            var currentUserId = GetCurrentUserId();
+
+            var followingCount = await _context.UserFollows
+                .CountAsync(uf => uf.FollowerId == currentUserId);
+
+            var followersCount = await _context.UserFollows
+                .CountAsync(uf => uf.FolloweeId == currentUserId);
+
+            return Ok(new
+            {
+                following = followingCount,
+                followers = followersCount
+            });
+        }
+
         private Guid GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

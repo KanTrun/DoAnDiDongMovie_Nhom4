@@ -113,14 +113,38 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
 
   void _handleFollow(String userId) async {
     try {
-      // For now, always follow (TODO: implement proper follow status check)
-      await ref.read(followsProvider.notifier).followUser(userId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã theo dõi'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // Get current follow status
+      final currentStatus = await ref.read(followStatusProvider(userId).future);
+      
+      if (currentStatus) {
+        // Currently following, so unfollow
+        await ref.read(followsProvider.notifier).unfollowUser(userId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã bỏ theo dõi'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else {
+        // Not following, so follow
+        await ref.read(followsProvider.notifier).followUser(userId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã theo dõi'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
+      // Force refresh UI by invalidating the provider
+      ref.invalidate(followStatusProvider(userId));
+      ref.invalidate(followStatsProvider);
+      
+      // Force rebuild the widget
+      if (mounted) {
+        setState(() {});
+      }
+      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -279,7 +303,6 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
                       final post = response.posts[index];
                       final currentUser = ref.watch(currentUserProvider);
                       final isOwner = currentUser?.userId == post.userId;
-                      final followStatus = ref.watch(followStatusProvider(post.userId));
                       
                       return PostCard(
                         post: post,
@@ -301,11 +324,6 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
                         onDelete: isOwner ? () {
                           _handleDeletePost(post);
                         } : null,
-                        isFollowing: followStatus.when(
-                          data: (isFollowing) => isFollowing,
-                          loading: () => false,
-                          error: (_, __) => false,
-                        ),
                         isOwner: isOwner,
                       );
                     },

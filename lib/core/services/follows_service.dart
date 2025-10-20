@@ -1,102 +1,127 @@
-import 'package:dio/dio.dart';
-import '../models/follow.dart';
-import '../network/api_client.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 
 class FollowsService {
-  // Follow user
+  static const String _baseUrl = AppConfig.backendBaseUrl;
+
+  /// Follow a user
   static Future<void> followUser(String token, String userId) async {
-    try {
-      await ApiClient.backend(token: token).post('/api/follows/users/$userId');
-    } on DioException catch (e) {
-      throw _handleError(e);
+    final response = await http.post(
+      Uri.parse('$_baseUrl/api/follows/users/$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return;
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to follow user');
     }
   }
 
-  // Unfollow user
+  /// Unfollow a user
   static Future<void> unfollowUser(String token, String userId) async {
-    try {
-      await ApiClient.backend(token: token).delete('/api/follows/users/$userId');
-    } on DioException catch (e) {
-      throw _handleError(e);
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/api/follows/users/$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return;
+    } else {
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Failed to unfollow user');
     }
   }
 
-  // Get user followers
-  static Future<PagedFollowsResponse> getUserFollowers(
+  /// Check if current user is following a specific user
+  static Future<bool> isFollowing(String token, String userId) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/follows/users/$userId/status'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final result = data['isFollowing'] ?? false;
+      return result;
+    } else {
+      return false;
+    }
+  }
+
+  /// Get user's followers
+  static Future<Map<String, dynamic>> getUserFollowers(
     String token,
-    FollowFilter filter,
-  ) async {
-    try {
-      final response = await ApiClient.backend(token: token).get(
-        '/api/follows/users/${filter.userId}/followers',
-        queryParameters: {
-          'page': filter.page,
-          'pageSize': filter.pageSize,
-        },
-      );
-      return PagedFollowsResponse.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
+    String userId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/follows/users/$userId/followers?page=$page&pageSize=$pageSize'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to get followers');
     }
   }
 
-  // Get user following
-  static Future<PagedFollowsResponse> getUserFollowing(
+  /// Get users that a user is following
+  static Future<Map<String, dynamic>> getUserFollowing(
     String token,
-    FollowFilter filter,
-  ) async {
-    try {
-      final response = await ApiClient.backend(token: token).get(
-        '/api/follows/users/${filter.userId}/following',
-        queryParameters: {
-          'page': filter.page,
-          'pageSize': filter.pageSize,
-        },
-      );
-      return PagedFollowsResponse.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
+    String userId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/follows/users/$userId/following?page=$page&pageSize=$pageSize'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to get following');
     }
   }
 
-  // Get follow status
-  static Future<FollowStatus> getFollowStatus(String token, String userId) async {
-    try {
-      final response = await ApiClient.backend(token: token).get('/api/follows/users/$userId/status');
-      return FollowStatus.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
+  /// Get current user's follow statistics
+  static Future<Map<String, int>> getUserFollowStats(String token) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/follows/stats'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
-  static String _handleError(DioException e) {
-    if (e.response?.data != null && e.response?.data['message'] != null) {
-      return e.response!.data['message'];
-    }
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return 'Kết nối bị timeout. Vui lòng thử lại.';
-      case DioExceptionType.connectionError:
-        return 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
-      case DioExceptionType.badResponse:
-        switch (e.response?.statusCode) {
-          case 400:
-            return 'Yêu cầu không hợp lệ.';
-          case 401:
-            return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
-          case 403:
-            return 'Bạn không có quyền truy cập.';
-          case 404:
-            return 'Không tìm thấy người dùng.';
-          case 500:
-            return 'Lỗi server. Vui lòng thử lại sau.';
-          default:
-            return 'Đã xảy ra lỗi. Vui lòng thử lại.';
-        }
-      default:
-        return 'Đã xảy ra lỗi không xác định.';
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return {
+        'following': data['following'] ?? 0,
+        'followers': data['followers'] ?? 0,
+      };
+    } else {
+      return {'following': 0, 'followers': 0};
     }
   }
 }
