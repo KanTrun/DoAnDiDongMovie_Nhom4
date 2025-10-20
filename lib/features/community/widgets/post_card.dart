@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/post.dart';
+import '../../../core/utils/time_utils.dart';
 
 class PostCard extends StatelessWidget {
   final PostListItem post;
@@ -61,7 +62,7 @@ class PostCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _formatTimeAgo(post.createdAt),
+                        TimeUtils.formatTimeAgo(post.createdAt),
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 12,
@@ -251,20 +252,6 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} ngày trước';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút trước';
-    } else {
-      return 'Vừa xong';
-    }
-  }
 }
 
 class _ActionButton extends StatelessWidget {

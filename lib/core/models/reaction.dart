@@ -1,3 +1,5 @@
+import '../utils/time_utils.dart';
+
 class Reaction {
   final int id;
   final int postId;
@@ -22,7 +24,7 @@ class Reaction {
       userId: json['userId'],
       displayName: json['displayName'],
       type: json['type'],
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: TimeUtils.parseUtcDateTime(json['createdAt']),
     );
   }
 
@@ -62,7 +64,7 @@ class CommentReaction {
       userId: json['userId'],
       displayName: json['displayName'],
       type: json['type'],
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: TimeUtils.parseUtcDateTime(json['createdAt']),
     );
   }
 

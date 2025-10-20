@@ -22,7 +22,7 @@ class Favorite {
       addedAt: json['addedAt'] != null 
         ? DateTime.parse(json['addedAt']) 
         : (json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+          ? DateTime.parse(json['createdAt']).toUtc() 
           : DateTime.now()),
     );
   }
@@ -68,7 +68,7 @@ class Watchlist {
       addedAt: json['addedAt'] != null 
         ? DateTime.parse(json['addedAt']) 
         : (json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+          ? DateTime.parse(json['createdAt']).toUtc() 
           : DateTime.now()),
     );
   }
@@ -111,7 +111,7 @@ class Note {
       userId: json['userId'] ?? '',
       movieId: json['movieId'] ?? 0,
       content: json['content'] ?? '',
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: DateTime.parse(json['createdAt']).toUtc(),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
   }
@@ -273,7 +273,7 @@ class AdminUser {
       email: json['email'] ?? '',
       displayName: json['displayName'],
       role: json['role'] ?? 'User',
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: DateTime.parse(json['createdAt']).toUtc(),
       bioAuthEnabled: json['bioAuthEnabled'] ?? false,
       favoritesCount: json['favoritesCount'] ?? 0,
       watchlistsCount: json['watchlistsCount'] ?? 0,

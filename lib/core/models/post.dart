@@ -1,3 +1,5 @@
+import '../utils/time_utils.dart';
+
 class Post {
   final int id;
   final String userId;
@@ -46,8 +48,8 @@ class Post {
       visibility: _parseInt(json['visibility']),
       likeCount: _parseInt(json['likeCount']),
       commentCount: _parseInt(json['commentCount']),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: TimeUtils.parseUtcDateTime(json['createdAt']),
+      updatedAt: json['updatedAt'] != null ? TimeUtils.parseUtcDateTime(json['updatedAt']) : null,
       displayName: json['displayName']?.toString(),
       posterPath: json['posterPath']?.toString(),
       isLikedByCurrentUser: json['isLikedByCurrentUser'] ?? false,
@@ -180,7 +182,7 @@ class PostListItem {
       excerpt: json['excerpt']?.toString() ?? '',
       likeCount: Post._parseInt(json['likeCount']),
       commentCount: Post._parseInt(json['commentCount']),
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: TimeUtils.parseUtcDateTime(json['createdAt']),
       isLikedByCurrentUser: json['isLikedByCurrentUser'] ?? false,
       posterPath: json['posterPath']?.toString(),
     );

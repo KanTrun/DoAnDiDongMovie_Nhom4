@@ -1,3 +1,5 @@
+import '../utils/time_utils.dart';
+
 class Notification {
   final int id;
   final String type;
@@ -26,7 +28,7 @@ class Notification {
       refId: json['refId'],
       payload: json['payload'],
       isRead: json['isRead'],
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: TimeUtils.parseUtcDateTime(json['createdAt']),
       message: json['message'],
       actionUrl: json['actionUrl'],
     );

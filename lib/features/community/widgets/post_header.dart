@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/post.dart';
+import '../../../core/utils/time_utils.dart';
 
 class PostHeader extends StatelessWidget {
   final Post post;
@@ -42,7 +43,7 @@ class PostHeader extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    _formatTimeAgo(post.createdAt),
+                    TimeUtils.formatTimeAgo(post.createdAt),
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,
@@ -144,20 +145,6 @@ class PostHeader extends StatelessWidget {
     );
   }
 
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} ngày trước';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút trước';
-    } else {
-      return 'Vừa xong';
-    }
-  }
 
   Color _getVisibilityColor(BuildContext context) {
     switch (post.visibility) {

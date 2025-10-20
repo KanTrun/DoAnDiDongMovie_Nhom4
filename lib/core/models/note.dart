@@ -1,3 +1,5 @@
+import '../utils/time_utils.dart';
+
 class Note {
   final int id;
   final int tmdbId;
@@ -21,8 +23,8 @@ class Note {
       tmdbId: json['tmdbId'],
       mediaType: json['mediaType'],
       content: json['content'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: TimeUtils.parseUtcDateTime(json['createdAt']),
+      updatedAt: json['updatedAt'] != null ? TimeUtils.parseUtcDateTime(json['updatedAt']) : null,
     );
   }
 

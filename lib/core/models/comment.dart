@@ -1,3 +1,5 @@
+import '../utils/time_utils.dart';
+
 class Comment {
   final int id;
   final int postId;
@@ -38,8 +40,8 @@ class Comment {
       parentCommentId: json['parentCommentId'] != null ? _parseInt(json['parentCommentId']) : null,
       content: json['content']?.toString() ?? '',
       likeCount: _parseInt(json['likeCount']),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: TimeUtils.parseUtcDateTime(json['createdAt']),
+      updatedAt: json['updatedAt'] != null ? TimeUtils.parseUtcDateTime(json['updatedAt']) : null,
       isLikedByCurrentUser: json['isLikedByCurrentUser'] ?? false,
       canEdit: json['canEdit'] ?? false,
       canDelete: json['canDelete'] ?? false,

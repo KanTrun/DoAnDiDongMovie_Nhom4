@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/comment.dart';
 import '../../../core/providers/community_provider.dart';
+import '../../../core/utils/time_utils.dart';
 
 class CommentSection extends ConsumerStatefulWidget {
   final int postId;
@@ -454,7 +455,7 @@ class CommentItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _formatTimeAgo(comment.createdAt),
+                        TimeUtils.formatTimeAgo(comment.createdAt),
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 11,
@@ -524,20 +525,6 @@ class CommentItem extends StatelessWidget {
     );
   }
 
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} ngày trước';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút trước';
-    } else {
-      return 'Vừa xong';
-    }
-  }
 }
 
 class _ActionButton extends StatelessWidget {
