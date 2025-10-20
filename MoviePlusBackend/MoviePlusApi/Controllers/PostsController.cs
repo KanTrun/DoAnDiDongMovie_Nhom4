@@ -29,7 +29,7 @@ namespace MoviePlusApi.Controllers
 
             var query = _context.Posts
                 .Include(p => p.User)
-                .Where(p => p.Visibility == 1); // Only public posts
+                .Where(p => p.Visibility == 1 || (p.Visibility == 0 && currentUserId.HasValue && p.UserId == currentUserId.Value)); // Public posts or user's own private posts
 
             // Apply filters
             if (filter.Filter == "following" && currentUserId.HasValue)
@@ -90,7 +90,7 @@ namespace MoviePlusApi.Controllers
 
             var query = _context.Posts
                 .Include(p => p.User)
-                .Where(p => p.TmdbId == tmdbId && p.Visibility == 1);
+                .Where(p => p.TmdbId == tmdbId && (p.Visibility == 1 || (p.Visibility == 0 && currentUserId.HasValue && p.UserId == currentUserId.Value)));
 
             if (!string.IsNullOrEmpty(mediaType))
             {
