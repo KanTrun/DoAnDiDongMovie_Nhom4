@@ -69,6 +69,7 @@ class _RatingSectionState extends ConsumerState<RatingSection> {
     final displayRating = _selectedRating > 0 ? _selectedRating : currentRating;
 
     return Container(
+      width: double.infinity, // Ensure full width
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey[900],
@@ -77,29 +78,32 @@ class _RatingSectionState extends ConsumerState<RatingSection> {
       ),
       child: Column(
         children: [
-          // Star rating display (10 stars = 1.0 to 10.0)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(10, (index) {
-              final starValue = (index + 1).toDouble();
-              final isSelected = starValue <= displayRating;
+          // Star rating display (10 stars = 1.0 to 10.0) - Fixed overflow
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(10, (index) {
+                final starValue = (index + 1).toDouble();
+                final isSelected = starValue <= displayRating;
 
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedRating = starValue;
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Icon(
-                    Icons.star,
-                    color: isSelected ? Colors.amber : Colors.grey,
-                    size: 32,
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedRating = starValue;
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 1),
+                    child: Icon(
+                      Icons.star,
+                      color: isSelected ? Colors.amber : Colors.grey,
+                      size: 28, // Reduced from 32 to 28
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -114,42 +118,89 @@ class _RatingSectionState extends ConsumerState<RatingSection> {
           ),
           const SizedBox(height: 16),
 
-          // Action buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              if (rating != null) ...[
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _isSubmitting ? null : _deleteRating,
-                    icon: const Icon(Icons.delete, size: 16),
-                    label: const Text('Xóa đánh giá'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
+          // Action buttons - Fixed overflow with responsive design
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isWideScreen = constraints.maxWidth > 300;
+              
+              if (isWideScreen) {
+                // Wide screen: use Row with Expanded
+                return Row(
+                  children: [
+                    if (rating != null) ...[
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isSubmitting ? null : _deleteRating,
+                          icon: const Icon(Icons.delete, size: 16),
+                          label: const Text('Xóa đánh giá'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _selectedRating > 0 && !_isSubmitting ? _submitRating : null,
+                        icon: _isSubmitting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.save, size: 16),
+                        label: Text(_isSubmitting ? 'Đang lưu...' : 'Lưu đánh giá'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _selectedRating > 0 && !_isSubmitting ? _submitRating : null,
-                  icon: _isSubmitting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.save, size: 16),
-                  label: Text(_isSubmitting ? 'Đang lưu...' : 'Lưu đánh giá'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-            ],
+                  ],
+                );
+              } else {
+                // Narrow screen: use Column
+                return Column(
+                  children: [
+                    if (rating != null) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isSubmitting ? null : _deleteRating,
+                          icon: const Icon(Icons.delete, size: 16),
+                          label: const Text('Xóa đánh giá'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _selectedRating > 0 && !_isSubmitting ? _submitRating : null,
+                        icon: _isSubmitting
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.save, size: 16),
+                        label: Text(_isSubmitting ? 'Đang lưu...' : 'Lưu đánh giá'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+            },
           ),
 
           if (rating != null) ...[
