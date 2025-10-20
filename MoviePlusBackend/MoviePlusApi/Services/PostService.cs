@@ -285,6 +285,11 @@ namespace MoviePlusApi.Services
                 post.Visibility = request.Visibility.Value;
             }
 
+            if (!string.IsNullOrEmpty(request.PosterPath))
+            {
+                post.PosterPath = request.PosterPath;
+            }
+
             post.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -319,6 +324,28 @@ namespace MoviePlusApi.Services
                 return false;
             }
 
+            // Manually remove dependent entities to avoid FK constraints preventing deletion
+            // Delete comment reactions of all comments in this post
+            var commentIds = await _context.PostComments
+                .Where(c => c.PostId == id)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            if (commentIds.Count > 0)
+            {
+                var commentReactions = _context.CommentReactions.Where(cr => commentIds.Contains(cr.CommentId));
+                _context.CommentReactions.RemoveRange(commentReactions);
+
+                // Delete all comments (including replies) of this post
+                var comments = _context.PostComments.Where(c => c.PostId == id);
+                _context.PostComments.RemoveRange(comments);
+            }
+
+            // Delete post reactions
+            var postReactions = _context.PostReactions.Where(pr => pr.PostId == id);
+            _context.PostReactions.RemoveRange(postReactions);
+
+            // Finally delete the post
             _context.Posts.Remove(post);
             await _context.SaveChangesAsync();
 

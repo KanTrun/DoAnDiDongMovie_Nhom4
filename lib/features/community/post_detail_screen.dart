@@ -4,6 +4,7 @@ import '../../core/models/post.dart';
 import '../../core/providers/community_provider.dart';
 import 'widgets/comment_section.dart';
 import 'widgets/post_header.dart';
+import 'widgets/post_editor.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
   final int postId;
@@ -180,7 +181,21 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   void _editPost() {
-    // TODO: Navigate to edit post screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PostEditor(
+          postId: widget.postId,
+          isEditMode: true,
+          initialTitle: _post?.title,
+          initialContent: _post?.content,
+          initialVisibility: _post?.visibility,
+          onPostCreated: () {
+            // Reload post after edit to reflect latest state
+            _loadPost();
+          },
+        ),
+      ),
+    );
   }
 
   void _deletePost() {
@@ -195,10 +210,29 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             child: const Text('Hủy'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              // TODO: Delete post
-              Navigator.of(context).pop();
+              try {
+                await ref.read(postsProvider.notifier).deletePost(widget.postId);
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Bài viết đã được xóa thành công!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Lỗi xóa bài viết: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('Xóa'),
           ),

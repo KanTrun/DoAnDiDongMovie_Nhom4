@@ -13,10 +13,12 @@ namespace MoviePlusApi.Controllers
     public class PostsController : ControllerBase
     {
         private readonly MoviePlusContext _context;
+        private readonly Services.IPostService _postService;
 
-        public PostsController(MoviePlusContext context)
+        public PostsController(MoviePlusContext context, Services.IPostService postService)
         {
             _context = context;
+            _postService = postService;
         }
 
         [HttpGet("feed")]
@@ -246,6 +248,7 @@ namespace MoviePlusApi.Controllers
                 Title = request.Title,
                 Content = request.Content.Trim(),
                 Visibility = request.Visibility,
+                PosterPath = request.PosterPath,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -355,16 +358,11 @@ namespace MoviePlusApi.Controllers
                 return Unauthorized();
             }
 
-            var post = await _context.Posts
-                .FirstOrDefaultAsync(p => p.Id == id && (p.UserId == userId.Value || User.IsInRole("Admin")));
-
-            if (post == null)
+            var deleted = await _postService.DeletePostAsync(id, userId.Value, User.IsInRole("Admin"));
+            if (!deleted)
             {
                 return NotFound(new { message = "Post not found" });
             }
-
-            _context.Posts.Remove(post);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }

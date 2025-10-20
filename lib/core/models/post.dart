@@ -37,23 +37,30 @@ class Post {
 
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
-      id: json['id'],
-      userId: json['userId'],
-      tmdbId: json['tmdbId'],
-      mediaType: json['mediaType'],
-      title: json['title'],
-      content: json['content'],
-      visibility: json['visibility'],
-      likeCount: json['likeCount'],
-      commentCount: json['commentCount'],
+      id: _parseInt(json['id']),
+      userId: json['userId']?.toString() ?? '',
+      tmdbId: json['tmdbId'] != null ? _parseInt(json['tmdbId']) : null,
+      mediaType: json['mediaType']?.toString(),
+      title: json['title']?.toString(),
+      content: json['content']?.toString() ?? '',
+      visibility: _parseInt(json['visibility']),
+      likeCount: _parseInt(json['likeCount']),
+      commentCount: _parseInt(json['commentCount']),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-      displayName: json['displayName'],
-      posterPath: json['posterPath'],
+      displayName: json['displayName']?.toString(),
+      posterPath: json['posterPath']?.toString(),
       isLikedByCurrentUser: json['isLikedByCurrentUser'] ?? false,
       canEdit: json['canEdit'] ?? false,
       canDelete: json['canDelete'] ?? false,
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   Map<String, dynamic> toJson() {
@@ -164,18 +171,18 @@ class PostListItem {
 
   factory PostListItem.fromJson(Map<String, dynamic> json) {
     return PostListItem(
-      id: json['id'],
-      userId: json['userId'],
-      displayName: json['displayName'],
-      tmdbId: json['tmdbId'],
-      mediaType: json['mediaType'],
-      title: json['title'],
-      excerpt: json['excerpt'],
-      likeCount: json['likeCount'],
-      commentCount: json['commentCount'],
+      id: Post._parseInt(json['id']),
+      userId: json['userId']?.toString() ?? '',
+      displayName: json['displayName']?.toString() ?? '',
+      tmdbId: json['tmdbId'] != null ? Post._parseInt(json['tmdbId']) : null,
+      mediaType: json['mediaType']?.toString(),
+      title: json['title']?.toString(),
+      excerpt: json['excerpt']?.toString() ?? '',
+      likeCount: Post._parseInt(json['likeCount']),
+      commentCount: Post._parseInt(json['commentCount']),
       createdAt: DateTime.parse(json['createdAt']),
       isLikedByCurrentUser: json['isLikedByCurrentUser'] ?? false,
-      posterPath: json['posterPath'],
+      posterPath: json['posterPath']?.toString(),
     );
   }
 
@@ -213,14 +220,21 @@ class PagedPostsResponse {
   });
 
   factory PagedPostsResponse.fromJson(Map<String, dynamic> json) {
+    // Guard against error payloads like { message: '...' }
+    if (!json.containsKey('posts')) {
+      final msg = json['message']?.toString() ?? 'Dữ liệu không hợp lệ từ máy chủ.';
+      throw Exception(msg);
+    }
+    final list = json['posts'];
+    if (list is! List) {
+      throw Exception('Dữ liệu danh sách bài viết không hợp lệ.');
+    }
     return PagedPostsResponse(
-      posts: (json['posts'] as List)
-          .map((postJson) => PostListItem.fromJson(postJson))
-          .toList(),
-      totalCount: json['totalCount'],
-      page: json['page'],
-      pageSize: json['pageSize'],
-      totalPages: json['totalPages'],
+      posts: list.map((postJson) => PostListItem.fromJson(postJson as Map<String, dynamic>)).toList(),
+      totalCount: Post._parseInt(json['totalCount']),
+      page: Post._parseInt(json['page']),
+      pageSize: Post._parseInt(json['pageSize']),
+      totalPages: Post._parseInt(json['totalPages']),
     );
   }
 }

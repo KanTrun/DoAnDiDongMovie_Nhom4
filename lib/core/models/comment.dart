@@ -31,15 +31,13 @@ class Comment {
 
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      postId: json['postId'] is int ? json['postId'] : int.parse(json['postId'].toString()),
+      id: _parseInt(json['id']),
+      postId: _parseInt(json['postId']),
       userId: json['userId']?.toString() ?? '',
       displayName: json['displayName']?.toString() ?? '',
-      parentCommentId: json['parentCommentId'] != null 
-          ? (json['parentCommentId'] is int ? json['parentCommentId'] : int.parse(json['parentCommentId'].toString()))
-          : null,
+      parentCommentId: json['parentCommentId'] != null ? _parseInt(json['parentCommentId']) : null,
       content: json['content']?.toString() ?? '',
-      likeCount: json['likeCount'] is int ? json['likeCount'] : (json['likeCount'] != null ? int.parse(json['likeCount'].toString()) : 0),
+      likeCount: _parseInt(json['likeCount']),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
       isLikedByCurrentUser: json['isLikedByCurrentUser'] ?? false,
@@ -51,6 +49,13 @@ class Comment {
               .toList()
           : null,
     );
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   Map<String, dynamic> toJson() {

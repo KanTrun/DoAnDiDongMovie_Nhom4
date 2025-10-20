@@ -16,7 +16,8 @@ namespace MoviePlusApi.DTOs
     public record UpdatePostDto(
         string? Title,
         string? Content,
-        byte? Visibility
+        byte? Visibility,
+        string? PosterPath = null
     );
 
     // Post List Item DTO (for feeds)

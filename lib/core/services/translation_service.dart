@@ -84,7 +84,7 @@ class TranslationService {
     if (text.isEmpty) return '';
 
     try {
-      debugPrint('🔄 Translating text: "${text.substring(0, text.length > 50 ? 50 : text.length)}..."');
+      // Debug log removed for production
       final translation = await _translator.translate(
         text,
         from: 'auto',

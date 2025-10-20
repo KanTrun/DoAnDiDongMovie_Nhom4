@@ -176,8 +176,8 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
                     backgroundColor: Colors.red,
                   ),
                 );
-                // Refresh the feed
-                _loadFeed();
+              // Refresh the feed again to ensure latest data
+              _loadFeed();
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

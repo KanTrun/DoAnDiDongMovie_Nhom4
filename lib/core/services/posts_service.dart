@@ -10,7 +10,14 @@ class PostsService {
         '/api/posts/feed',
         queryParameters: filter.toJson(),
       );
-      return PagedPostsResponse.fromJson(response.data);
+      if (response.data is Map<String, dynamic> && (response.data as Map<String, dynamic>).containsKey('posts')) {
+        return PagedPostsResponse.fromJson(response.data);
+      }
+      // If backend returned an error body with { message: ... }
+      if (response.data is Map<String, dynamic> && (response.data as Map<String, dynamic>).containsKey('message')) {
+        throw Exception((response.data as Map<String, dynamic>)['message']?.toString() ?? 'Đã xảy ra lỗi.');
+      }
+      throw Exception('Dữ liệu phản hồi không hợp lệ.');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -33,7 +40,13 @@ class PostsService {
           'pageSize': pageSize,
         },
       );
-      return PagedPostsResponse.fromJson(response.data);
+      if (response.data is Map<String, dynamic> && (response.data as Map<String, dynamic>).containsKey('posts')) {
+        return PagedPostsResponse.fromJson(response.data);
+      }
+      if (response.data is Map<String, dynamic> && (response.data as Map<String, dynamic>).containsKey('message')) {
+        throw Exception((response.data as Map<String, dynamic>)['message']?.toString() ?? 'Đã xảy ra lỗi.');
+      }
+      throw Exception('Dữ liệu phản hồi không hợp lệ.');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -64,7 +77,13 @@ class PostsService {
           'pageSize': pageSize,
         },
       );
-      return PagedPostsResponse.fromJson(response.data);
+      if (response.data is Map<String, dynamic> && (response.data as Map<String, dynamic>).containsKey('posts')) {
+        return PagedPostsResponse.fromJson(response.data);
+      }
+      if (response.data is Map<String, dynamic> && (response.data as Map<String, dynamic>).containsKey('message')) {
+        throw Exception((response.data as Map<String, dynamic>)['message']?.toString() ?? 'Đã xảy ra lỗi.');
+      }
+      throw Exception('Dữ liệu phản hồi không hợp lệ.');
     } on DioException catch (e) {
       throw _handleError(e);
     }

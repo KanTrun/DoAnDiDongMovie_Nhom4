@@ -22,6 +22,8 @@ builder.Services.AddDbContext<MoviePlusContext>(options =>
 // Add JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+// Community services
+builder.Services.AddScoped<IPostService, PostService>();
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

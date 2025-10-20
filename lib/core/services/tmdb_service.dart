@@ -431,7 +431,7 @@ class TmdbService {
             }
             
             final overview = tv['overview'] ?? '';
-            print('📺 TV Show: ${tv['name']} - Overview: "${overview}"');
+            // Debug log removed for production
             // TV show original overview
             
             // Get English overview from the combined data
@@ -981,14 +981,14 @@ class TmdbService {
     }
   }
 
-  // TRANSLATE REAL OVERVIEW TO VIETNAMESE - NO FALLBACK
+  // Translate real overview to Vietnamese - silent mode
   static Future<String> _ensureVietnameseOverview(String title, String originalOverview, String mediaType) async {
-    print('🔄 TRANSLATING REAL OVERVIEW for "$title"');
-    print('📝 Original overview: "$originalOverview"');
+    // Debug log removed
+    // Debug log removed
     
     // ONLY translate if we have original overview
     if (originalOverview.isNotEmpty) {
-      print('🔄 TRANSLATING: "$originalOverview"');
+      // Debug log removed
       
       // Method 1: Use TranslationService (Google Translator package)
       try {

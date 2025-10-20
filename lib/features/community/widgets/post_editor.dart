@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/post.dart';
 import '../../../core/providers/community_provider.dart';
 import 'movie_search_dialog.dart';
+import '../../../core/services/tmdb_service.dart';
 
 class PostEditor extends ConsumerStatefulWidget {
   final int? tmdbId;
@@ -54,6 +55,11 @@ class _PostEditorState extends ConsumerState<PostEditor> {
     if (widget.initialVisibility != null) {
       _visibility = widget.initialVisibility!;
     }
+
+    // If tmdbId is provided (e.g., creating from a movie context), prefetch title/poster
+    if (widget.tmdbId != null) {
+      _prefillFromTmdb(widget.tmdbId!, widget.mediaType ?? 'movie');
+    }
   }
 
   @override
@@ -92,6 +98,34 @@ class _PostEditorState extends ConsumerState<PostEditor> {
     return _selectedPosterPath;
   }
 
+  Future<void> _prefillFromTmdb(int tmdbId, String mediaType) async {
+    try {
+      if (mediaType == 'tv') {
+        final tv = await TmdbService.getTvShowDetails(tmdbId);
+        setState(() {
+          _selectedMovieTitle = tv.name;
+          _selectedTmdbId = tmdbId;
+          _selectedMediaType = 'tv';
+          _selectedPosterPath = tv.posterPath;
+        });
+      } else {
+        final movie = await TmdbService.getMovieDetails(tmdbId);
+        setState(() {
+          _selectedMovieTitle = movie.title;
+          _selectedTmdbId = tmdbId;
+          _selectedMediaType = 'movie';
+          _selectedPosterPath = movie.posterPath;
+        });
+      }
+      // If no initial title, default to movie/tv title
+      if (_titleController.text.trim().isEmpty && _selectedMovieTitle != null) {
+        _titleController.text = _selectedMovieTitle!;
+      }
+    } catch (_) {
+      // ignore prefill errors silently
+    }
+  }
+
   void _submitPost() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -102,10 +136,15 @@ class _PostEditorState extends ConsumerState<PostEditor> {
     try {
       if (widget.isEditMode && widget.postId != null) {
         // Edit mode
+        // Only send visibility if different from initial
+        final int? newVisibility = (widget.initialVisibility != null && _visibility == widget.initialVisibility)
+            ? null
+            : _visibility;
+
         final request = UpdatePostRequest(
           title: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
           content: _contentController.text.trim(),
-          visibility: _visibility,
+          visibility: newVisibility,
         );
         
         await ref.read(postsProvider.notifier).updatePost(widget.postId!, request);
@@ -125,7 +164,10 @@ class _PostEditorState extends ConsumerState<PostEditor> {
         final request = CreatePostRequest(
           tmdbId: _selectedTmdbId ?? widget.tmdbId,
           mediaType: _selectedMediaType ?? widget.mediaType,
-          title: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
+          // Default title to selected movie title if user leaves it blank
+          title: _titleController.text.trim().isEmpty
+              ? (_selectedMovieTitle ?? widget.initialTitle)
+              : _titleController.text.trim(),
           content: _contentController.text.trim(),
           visibility: _visibility,
           posterPath: _getPosterPath(),

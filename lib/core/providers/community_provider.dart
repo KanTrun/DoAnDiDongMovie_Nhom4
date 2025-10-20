@@ -101,6 +101,7 @@ class PostsNotifier extends StateNotifier<AsyncValue<PagedPostsResponse>> {
         commentCount: post.commentCount,
         createdAt: post.createdAt,
         isLikedByCurrentUser: post.isLikedByCurrentUser,
+        posterPath: post.posterPath,
       );
       
       state.whenData((response) {
@@ -137,6 +138,7 @@ class PostsNotifier extends StateNotifier<AsyncValue<PagedPostsResponse>> {
         commentCount: updatedPost.commentCount,
         createdAt: updatedPost.createdAt,
         isLikedByCurrentUser: updatedPost.isLikedByCurrentUser,
+        posterPath: updatedPost.posterPath,
       );
       
       state.whenData((response) {
@@ -173,6 +175,11 @@ class PostsNotifier extends StateNotifier<AsyncValue<PagedPostsResponse>> {
           totalPages: response.totalPages,
         ));
       });
+
+      // Force refresh from server to avoid stale cache and ensure consistency
+      if (_currentFilter != null) {
+        await loadFeed(filter: _currentFilter);
+      }
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
