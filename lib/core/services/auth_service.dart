@@ -51,6 +51,80 @@ class AuthService {
     }
   }
 
+  // Biometric authentication methods
+  static Future<void> registerBiometric(String token, String template) async {
+    try {
+      print('🌐 DEBUG: Gửi request đăng ký vân tay');
+      print('🔗 DEBUG: URL = $_baseUrl/register-biometric');
+      print('🔑 DEBUG: Token = ${token.substring(0, 20)}...');
+      print('🎯 DEBUG: Template = $template');
+      
+      final response = await ApiClient.backend(token: token).post(
+        '$_baseUrl/register-biometric',
+        data: {'template': template},
+      );
+      
+      print('✅ DEBUG: Server response = ${response.statusCode}');
+      print('📄 DEBUG: Response data = ${response.data}');
+    } on DioException catch (e) {
+      print('❌ DEBUG: DioException: ${e.message}');
+      print('❌ DEBUG: Error type: ${e.type}');
+      print('❌ DEBUG: Response: ${e.response?.data}');
+      print('❌ DEBUG: Status code: ${e.response?.statusCode}');
+      print('❌ DEBUG: Request URL: ${e.requestOptions.uri}');
+      throw _handleError(e);
+    } catch (e) {
+      print('❌ DEBUG: General error: $e');
+      rethrow;
+    }
+  }
+
+  static Future<AuthResponse> loginBiometric(String template) async {
+    try {
+      final response = await ApiClient.backend().post(
+        '$_baseUrl/login-biometric',
+        data: {'template': template},
+      );
+      return AuthResponse.fromJson(response.data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<void> removeBiometric(String token) async {
+    try {
+      await ApiClient.backend(token: token).delete(
+        '$_baseUrl/remove-biometric',
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<dynamic> loginBiometricWithSelection(String template) async {
+    try {
+      final response = await ApiClient.backend().post(
+        '$_baseUrl/login-biometric',
+        data: {'template': template},
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  static Future<AuthResponse> loginBiometricAccount(String template, String userId) async {
+    try {
+      final response = await ApiClient.backend().post(
+        '$_baseUrl/login-biometric-account',
+        data: {'template': template, 'userId': userId},
+      );
+      return AuthResponse.fromJson(response.data);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   static String _handleError(DioException e) {
     if (e.response?.data != null && e.response?.data['message'] != null) {
       return e.response!.data['message'];

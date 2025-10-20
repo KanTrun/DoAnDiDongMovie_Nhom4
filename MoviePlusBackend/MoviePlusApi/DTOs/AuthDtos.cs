@@ -46,4 +46,25 @@ namespace MoviePlusApi.DTOs
     {
         public bool Enabled { get; set; }
     }
+
+    public class BiometricRegisterDto
+    {
+        [Required]
+        public string Template { get; set; } = string.Empty;
+    }
+
+    public class BiometricLoginDto
+    {
+        [Required]
+        public string Template { get; set; } = string.Empty;
+    }
+
+    public class BiometricAccountLoginDto
+    {
+        [Required]
+        public string Template { get; set; } = string.Empty;
+        
+        [Required]
+        public Guid UserId { get; set; }
+    }
 }

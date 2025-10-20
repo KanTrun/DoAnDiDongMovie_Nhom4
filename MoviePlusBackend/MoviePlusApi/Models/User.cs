@@ -24,6 +24,9 @@ namespace MoviePlusApi.Models
 
         public bool BioAuthEnabled { get; set; } = false;
 
+        [MaxLength(1000)]
+        public string? BiometricTemplate { get; set; }
+
         [Required]
         [MaxLength(20)]
         public string Role { get; set; } = "User";

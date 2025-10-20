@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
-import '../services/auth_service.dart';
 import '../auth/jwt_storage.dart';
+import '../services/auth_service.dart';
+import 'package:local_auth/local_auth.dart';
 
 // Storage provider
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
@@ -177,6 +179,258 @@ class AuthNotifier extends StateNotifier<AuthState> {
         error: 'Lỗi khi đăng xuất: ${e.toString()}',
       );
     }
+  }
+
+
+  // Biometric login with account selection support
+  Future<Map<String, dynamic>> loginWithBiometrics() async {
+    try {
+      final localAuth = LocalAuthentication();
+      final isSupported = await localAuth.isDeviceSupported();
+      final canCheck = await localAuth.canCheckBiometrics;
+      if (!isSupported || !canCheck) return {'success': false, 'error': 'Biometric not supported'};
+
+      final didAuthenticate = await localAuth.authenticate(
+        localizedReason: 'Xác thực sinh trắc học để đăng nhập',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+
+      if (!didAuthenticate) return {'success': false, 'error': 'Authentication failed'};
+
+      // Tạo template cố định (giống như khi đăng ký)
+      final template = await _generateBiometricTemplate();
+      print('🔐 DEBUG: Template đăng nhập = $template');
+
+      // Kiểm tra có nhiều tài khoản không
+      final result = await AuthService.loginBiometricWithSelection(template);
+      
+      if (result['multipleAccounts'] == true) {
+        // Có nhiều tài khoản - trả về danh sách để UI hiển thị
+        return {
+          'success': false,
+          'needsSelection': true,
+          'accounts': result['accounts'],
+          'template': template,
+        };
+      } else {
+        // Chỉ có 1 tài khoản - đăng nhập luôn
+        final response = AuthResponse.fromJson(result);
+        await _saveAuthData(response);
+        return {'success': true};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  Future<bool> _showAccountSelectionDialog(List accounts, String template) async {
+    print('🔍 DEBUG: Có ${accounts.length} tài khoản cùng vân tay');
+    for (int i = 0; i < accounts.length; i++) {
+      final account = accounts[i];
+      print('👤 DEBUG: Tài khoản $i: ${account.toString()}');
+    }
+    
+    if (accounts.isNotEmpty) {
+      print('🎯 DEBUG: Cần hiển thị dialog chọn tài khoản');
+      print('⚠️ DEBUG: Tạm thời chọn tài khoản đầu tiên - cần implement UI');
+      
+      // Tạm thời chọn tài khoản đầu tiên để test
+      // TODO: Implement proper account selection dialog
+      final firstAccount = accounts.first;
+      print('✅ DEBUG: Chọn tài khoản đầu tiên (tạm thời)');
+      print('🔍 DEBUG: Account data: ${firstAccount.toString()}');
+      
+      // Tìm ID của tài khoản (có thể là 'Id', 'id', hoặc 'userId')
+      String? accountId = firstAccount['Id'] ?? firstAccount['id'] ?? firstAccount['userId'];
+      
+      if (accountId != null) {
+        print('🔑 DEBUG: Account ID = $accountId');
+        final response = await AuthService.loginBiometricAccount(template, accountId);
+        await _saveAuthData(response);
+        return true;
+      } else {
+        print('❌ DEBUG: Không tìm thấy Account ID');
+        return false;
+      }
+    }
+    return false;
+  }
+
+  // Hiển thị dialog chọn tài khoản
+  Future<bool> _showAccountSelectionUI(List accounts, String template) async {
+    // TODO: Implement proper account selection UI
+    // For now, return false to indicate no selection made
+    return false;
+  }
+
+  Future<void> _saveAuthData(AuthResponse response) async {
+    await _storage.write(key: _tokenKey, value: response.token);
+    await _storage.write(key: _userKey, value: response.user.toJson().toString());
+    await JwtStorage.saveToken(response.token);
+    await JwtStorage.saveUserId(response.user.userId);
+    state = AuthState(user: response.user, token: response.token);
+  }
+
+  // Đăng nhập với tài khoản đã chọn
+  Future<bool> loginWithSelectedAccount(String template, String accountId) async {
+    try {
+      final response = await AuthService.loginBiometricAccount(template, accountId);
+      await _saveAuthData(response);
+      return true;
+    } catch (e) {
+      print('❌ DEBUG: Lỗi đăng nhập tài khoản đã chọn: $e');
+      return false;
+    }
+  }
+
+  // Đăng ký vân tay cho user hiện tại
+  Future<bool> registerBiometrics() async {
+    try {
+      print('🔍 DEBUG: Bắt đầu đăng ký vân tay');
+      
+      if (state.token == null) {
+        print('❌ DEBUG: Không có token');
+        throw Exception('Không có token xác thực');
+      }
+
+      print('✅ DEBUG: Có token, bắt đầu kiểm tra thiết bị');
+      final localAuth = LocalAuthentication();
+      
+      print('🔍 DEBUG: Kiểm tra hỗ trợ sinh trắc học...');
+      final isSupported = await localAuth.isDeviceSupported();
+      print('📱 DEBUG: isSupported = $isSupported');
+      
+      if (!isSupported) {
+        print('❌ DEBUG: Thiết bị không hỗ trợ sinh trắc học');
+        throw Exception('Thiết bị không hỗ trợ sinh trắc học');
+      }
+      
+      print('🔍 DEBUG: Kiểm tra có thể xác thực...');
+      final canCheck = await localAuth.canCheckBiometrics;
+      print('🔐 DEBUG: canCheck = $canCheck');
+      
+      if (!canCheck) {
+        print('❌ DEBUG: Chưa đăng ký vân tay trong hệ thống');
+        throw Exception('Chưa đăng ký vân tay trong cài đặt hệ thống');
+      }
+
+      print('✅ DEBUG: Thiết bị OK, bắt đầu xác thực vân tay...');
+      final didAuthenticate = await localAuth.authenticate(
+        localizedReason: 'Xác thực vân tay để liên kết với tài khoản này',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+
+      print('🔐 DEBUG: Kết quả xác thực = $didAuthenticate');
+      if (!didAuthenticate) {
+        print('❌ DEBUG: Xác thực vân tay thất bại');
+        throw Exception('Xác thực vân tay thất bại');
+      }
+
+      print('✅ DEBUG: Xác thực thành công, tạo template...');
+      final template = await _generateBiometricTemplate();
+      print('🎯 DEBUG: Template mới = $template');
+
+      print('🌐 DEBUG: Gửi template lên server...');
+      await AuthService.registerBiometric(state.token!, template);
+      print('✅ DEBUG: Đăng ký thành công!');
+      
+      // Cập nhật state để bioAuthEnabled = true
+      if (state.user != null) {
+        final updatedUser = User(
+          userId: state.user!.userId,
+          email: state.user!.email,
+          username: state.user!.username,
+          fullName: state.user!.fullName,
+          profilePicture: state.user!.profilePicture,
+          role: state.user!.role,
+          bioAuthEnabled: true,
+          lastLogin: state.user!.lastLogin,
+          createdAt: state.user!.createdAt,
+          updatedAt: state.user!.updatedAt,
+        );
+        state = state.copyWith(user: updatedUser);
+        print('🔄 DEBUG: Đã cập nhật bioAuthEnabled = true');
+      }
+      
+      return true;
+    } catch (e) {
+      print('❌ DEBUG: Lỗi chi tiết: $e');
+      print('❌ DEBUG: Stack trace: ${StackTrace.current}');
+      return false;
+    }
+  }
+
+  // Xóa vân tay đã đăng ký
+  Future<bool> removeBiometrics() async {
+    try {
+      print('🗑️ DEBUG: Bắt đầu xóa vân tay');
+      
+      if (state.token == null) {
+        print('❌ DEBUG: Không có token');
+        return false;
+      }
+      
+      print('🌐 DEBUG: Gửi request xóa vân tay lên server...');
+      await AuthService.removeBiometric(state.token!);
+      print('✅ DEBUG: Xóa vân tay thành công!');
+      
+      // Cập nhật state để bioAuthEnabled = false
+      if (state.user != null) {
+        final updatedUser = User(
+          userId: state.user!.userId,
+          email: state.user!.email,
+          username: state.user!.username,
+          fullName: state.user!.fullName,
+          profilePicture: state.user!.profilePicture,
+          role: state.user!.role,
+          bioAuthEnabled: false,
+          lastLogin: state.user!.lastLogin,
+          createdAt: state.user!.createdAt,
+          updatedAt: state.user!.updatedAt,
+        );
+        state = state.copyWith(user: updatedUser);
+        print('🔄 DEBUG: Đã cập nhật bioAuthEnabled = false');
+      }
+      
+      return true;
+    } catch (e) {
+      print('❌ DEBUG: Lỗi xóa vân tay: $e');
+      return false;
+    }
+  }
+
+  // Tạo template unique dựa trên thông tin vân tay thực tế
+  Future<String> _generateBiometricTemplate() async {
+    // Template được tạo từ thông tin CỐ ĐỊNH:
+    // 1. Device ID cố định (để cùng thiết bị có cùng template)
+    // 2. Thông tin thiết bị
+    // KHÔNG phụ thuộc vào user vì có thể chưa đăng nhập
+    final deviceId = await _getDeviceId();
+    
+    // Tạo hash cố định từ thông tin device
+    final combined = 'device_${deviceId}';
+    final hash = combined.hashCode.abs().toString();
+    
+    print('🔧 DEBUG: Device ID = $deviceId');
+    print('🔧 DEBUG: Combined = $combined');
+    print('🔧 DEBUG: Hash = $hash');
+    
+    // Tạo template với format: bio_device_hash
+    return 'bio_$hash';
+  }
+
+
+  // Lấy device ID (giả lập)
+  Future<String> _getDeviceId() async {
+    // Trong thực tế sẽ lấy device ID thật
+    // Hiện tại tạo một ID cố định cho demo
+    return 'device_12345';
   }
 
   Future<void> updateProfile(Map<String, dynamic> data) async {

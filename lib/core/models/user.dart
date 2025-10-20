@@ -5,6 +5,7 @@ class User {
   final String? fullName;
   final String? profilePicture;
   final String role;
+  final bool bioAuthEnabled;
   final DateTime? lastLogin;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -16,6 +17,7 @@ class User {
     this.fullName,
     this.profilePicture,
     required this.role,
+    this.bioAuthEnabled = false,
     this.lastLogin,
     required this.createdAt,
     required this.updatedAt,
@@ -29,6 +31,7 @@ class User {
       fullName: json['displayName'] ?? json['fullName'],
       profilePicture: json['profilePicture'],
       role: json['role'] ?? 'User',
+      bioAuthEnabled: json['bioAuthEnabled'] ?? false,
       lastLogin: json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
@@ -43,6 +46,7 @@ class User {
       'fullName': fullName,
       'profilePicture': profilePicture,
       'role': role,
+      'bioAuthEnabled': bioAuthEnabled,
       'lastLogin': lastLogin?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),

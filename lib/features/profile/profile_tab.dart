@@ -473,6 +473,13 @@ class ProfileTab extends ConsumerWidget {
         },
       },
       {
+        'icon': Icons.fingerprint,
+        'title': 'Quản lý vân tay',
+        'subtitle': 'Liên kết/xóa đăng nhập bằng vân tay',
+        'color': Colors.blue,
+        'onTap': () => _showBiometricManagementDialog(context, ref),
+      },
+      {
         'icon': Icons.help_outline,
         'title': 'Trợ giúp',
         'subtitle': 'Hướng dẫn sử dụng và hỗ trợ',
@@ -567,6 +574,284 @@ class ProfileTab extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _showBiometricManagementDialog(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider);
+    final hasBiometric = currentUser?.bioAuthEnabled ?? false;
+    
+    print('🔍 DEBUG: Current user bioAuthEnabled = $hasBiometric');
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: Text(
+          hasBiometric ? 'Quản lý vân tay' : 'Liên kết vân tay',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: hasBiometric 
+          ? const Text(
+              'Tài khoản này đã đăng ký vân tay. Bạn có muốn xóa không?',
+              style: TextStyle(color: Colors.white),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Liên kết vân tay với tài khoản để đăng nhập nhanh.',
+                  style: TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '⚠️ Lưu ý quan trọng:',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '• Phải đăng ký vân tay TRƯỚC trong Cài đặt hệ thống\n'
+                        '• App chỉ LIÊN KẾT vân tay đã có với tài khoản\n'
+                        '• Không thể đăng ký vân tay mới từ app',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '📱 Cách thực hiện:',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '1. Vào Cài đặt → Bảo mật → Vân tay\n'
+                        '2. Đăng ký vân tay trong hệ thống\n'
+                        '3. Quay lại app → Bấm "Liên kết"',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          if (hasBiometric) ...[
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                final success = await ref.read(authProvider.notifier).removeBiometrics();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(success 
+                        ? 'Đã xóa vân tay thành công!' 
+                        : 'Xóa vân tay thất bại. Vui lòng thử lại.'),
+                      backgroundColor: success ? Colors.green : const Color(0xFFE50914),
+                    ),
+                  );
+                  
+                  // Refresh state để cập nhật UI
+                  if (success) {
+                    ref.invalidate(authProvider);
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Xóa vân tay'),
+            ),
+          ] else ...[
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _performBiometricRegistration(context, ref);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              child: const Text('Liên kết'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performBiometricRegistration(BuildContext context, WidgetRef ref) async {
+    // Hiển thị hướng dẫn đăng ký vân tay
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text(
+          'Đăng ký vân tay',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.fingerprint, color: Colors.blue, size: 48),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Bạn sẽ cần đặt ngón tay lên cảm biến 2 lần:',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '• Lần 1: Đăng ký vân tay\n• Lần 2: Xác nhận vân tay',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Đảm bảo ngón tay sạch và khô ráo',
+              style: TextStyle(color: Colors.orange, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await _startBiometricRegistration(context, ref);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            child: const Text('Bắt đầu'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _startBiometricRegistration(BuildContext context, WidgetRef ref) async {
+    // Lưu reference để tránh deactivated widget
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    // Hiển thị loading dialog với thông báo chi tiết
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(color: Colors.blue),
+            const SizedBox(height: 16),
+            const Text(
+              'Đang đăng ký vân tay...',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Vui lòng đặt ngón tay lên cảm biến',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Sẽ có 2 lần xác thực',
+              style: TextStyle(color: Colors.blue, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      print('🚀 DEBUG: Bắt đầu đăng ký vân tay từ UI');
+      final success = await ref.read(authProvider.notifier).registerBiometrics();
+      print('📊 DEBUG: Kết quả đăng ký = $success');
+      
+      // Sử dụng delay nhỏ để đảm bảo widget tree ổn định
+      await Future.delayed(const Duration(milliseconds: 100));
+      print('🔄 DEBUG: Đóng loading dialog...');
+      navigator.pop();
+      
+      if (success) {
+        print('✅ DEBUG: Hiển thị thông báo thành công');
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('🎉 Liên kết vân tay thành công! Bây giờ bạn có thể đăng nhập bằng vân tay.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      } else {
+        print('❌ DEBUG: Hiển thị thông báo thất bại');
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('❌ Liên kết vân tay thất bại. Vui lòng thử lại.'),
+            backgroundColor: Color(0xFFE50914),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('💥 DEBUG: Exception trong UI: $e');
+      // Đóng loading dialog trong mọi trường hợp
+      await Future.delayed(const Duration(milliseconds: 100));
+      navigator.pop();
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('❌ Lỗi chi tiết: $e'),
+          backgroundColor: const Color(0xFFE50914),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {

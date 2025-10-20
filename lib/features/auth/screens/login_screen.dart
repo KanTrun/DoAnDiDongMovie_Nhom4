@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:local_auth/local_auth.dart';
 import '../../../core/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -44,6 +45,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
     
     _fadeController.forward();
+    _maybeShowBiometricHint();
   }
 
   @override
@@ -77,6 +79,121 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _maybeShowBiometricHint() async {
+    final localAuth = LocalAuthentication();
+    try {
+      final supported = await localAuth.isDeviceSupported();
+      final canCheck = await localAuth.canCheckBiometrics;
+      if (!mounted || !supported || !canCheck) return;
+    } catch (_) {
+      return;
+    }
+  }
+
+  Future<void> _loginWithBiometrics() async {
+    if (!mounted) return;
+    final result = await ref.read(authProvider.notifier).loginWithBiometrics();
+    
+    if (result['success'] == true && mounted && ref.read(isAuthenticatedProvider)) {
+      context.go('/home');
+    } else if (result['needsSelection'] == true && mounted) {
+      // Hiển thị dialog chọn tài khoản
+      await _showAccountSelectionDialog(result['accounts'], result['template']);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['error'] ?? 'Xác thực sinh trắc học thất bại. Vui lòng đăng ký vân tay trước.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFE50914),
+        ),
+      );
+    }
+  }
+
+  // Hiển thị dialog chọn tài khoản
+  Future<void> _showAccountSelectionDialog(List accounts, String template) async {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text(
+          'Chọn tài khoản',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Có nhiều tài khoản sử dụng cùng vân tay. Vui lòng chọn tài khoản muốn đăng nhập:',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            ...accounts.asMap().entries.map((entry) {
+              final index = entry.key;
+              final account = entry.value;
+              final email = account['Email'] ?? account['email'] ?? 'Unknown';
+              final displayName = account['DisplayName'] ?? account['displayName'] ?? 'User';
+              
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.red,
+                  child: Text(
+                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                title: Text(
+                  displayName,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  email,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await _loginWithSelectedAccount(account, template);
+                },
+              );
+            }).toList(),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy', style: TextStyle(color: Colors.white70)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Đăng nhập với tài khoản đã chọn
+  Future<void> _loginWithSelectedAccount(Map account, String template) async {
+    if (!mounted) return;
+    
+    try {
+      final accountId = account['Id'] ?? account['id'] ?? account['userId'];
+      if (accountId != null) {
+        final response = await ref.read(authProvider.notifier).loginWithSelectedAccount(template, accountId);
+        if (response && mounted && ref.read(isAuthenticatedProvider)) {
+          context.go('/home');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi đăng nhập: $e'),
+            backgroundColor: const Color(0xFFE50914),
           ),
         );
       }
@@ -353,6 +470,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                                 ),
                                         ),
                                       ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 16),
+
+                                  // Biometric button
+                                  SizedBox(
+                                    height: 56,
+                                    child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: Colors.white.withOpacity(0.25)),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      onPressed: isLoading ? null : _loginWithBiometrics,
+                                      icon: const Icon(Icons.fingerprint, size: 24),
+                                      label: const Text(
+                                        'Đăng nhập bằng vân tay / Face ID',
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                  const SizedBox(height: 12),
+                                  
+                                  // Biometric help text
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.info_outline, color: Colors.blue, size: 16),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Cần đăng ký vân tay trước trong Profile',
+                                            style: TextStyle(
+                                              color: Colors.blue[300],
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
