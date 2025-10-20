@@ -186,6 +186,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         builder: (context) => PostEditor(
           postId: widget.postId,
           isEditMode: true,
+          tmdbId: _post?.tmdbId,
+          mediaType: _post?.mediaType,
           initialTitle: _post?.title,
           initialContent: _post?.content,
           initialVisibility: _post?.visibility,

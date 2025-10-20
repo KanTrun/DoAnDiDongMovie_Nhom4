@@ -149,10 +149,13 @@ namespace MoviePlusApi.Controllers
                 return NotFound(new { message = "Post not found" });
             }
 
+            // Ensure navigation user is loaded to avoid null when composing response
+            await _context.Entry(post).Reference(p => p.User).LoadAsync();
+
             var response = new PostDetailDto(
                 post.Id,
                 post.UserId,
-                post.User.DisplayName ?? post.User.Email,
+                post.User != null ? (post.User.DisplayName ?? post.User.Email) : string.Empty,
                 post.TmdbId,
                 post.MediaType,
                 post.Title,
@@ -298,54 +301,12 @@ namespace MoviePlusApi.Controllers
             {
                 return Unauthorized();
             }
-
-            var post = await _context.Posts
-                .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId.Value);
-
-            if (post == null)
+            var updated = await _postService.UpdatePostAsync(id, request, userId.Value);
+            if (updated == null)
             {
                 return NotFound(new { message = "Post not found" });
             }
-
-            if (!string.IsNullOrEmpty(request.Title))
-            {
-                post.Title = request.Title.Trim();
-            }
-
-            if (!string.IsNullOrEmpty(request.Content))
-            {
-                post.Content = request.Content.Trim();
-            }
-
-            if (request.Visibility.HasValue)
-            {
-                post.Visibility = request.Visibility.Value;
-            }
-
-            post.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            var response = new PostDetailDto(
-                post.Id,
-                post.UserId,
-                post.User.DisplayName ?? post.User.Email,
-                post.TmdbId,
-                post.MediaType,
-                post.Title,
-                post.Content,
-                post.Visibility,
-                post.LikeCount,
-                post.CommentCount,
-                post.CreatedAt,
-                post.UpdatedAt,
-                post.PosterPath,
-                post.PostReactions.Any(pr => pr.UserId == userId.Value),
-                true,
-                true
-            );
-
-            return Ok(response);
+            return Ok(updated);
         }
 
         [HttpDelete("{id}")]

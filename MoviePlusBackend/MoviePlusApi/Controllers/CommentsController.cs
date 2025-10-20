@@ -181,6 +181,9 @@ namespace MoviePlusApi.Controllers
 
             await _context.SaveChangesAsync();
 
+            // Ensure navigation properties are loaded to avoid NullReference
+            await _context.Entry(comment).Reference(c => c.User).LoadAsync();
+
             // Create notification for post owner (if not the same user)
             if (post.UserId != userId.Value)
             {
@@ -200,7 +203,7 @@ namespace MoviePlusApi.Controllers
                 comment.Id,
                 comment.PostId,
                 comment.UserId,
-                comment.User.DisplayName ?? comment.User.Email,
+                comment.User != null ? (comment.User.DisplayName ?? comment.User.Email) : string.Empty,
                 comment.ParentCommentId,
                 comment.Content,
                 comment.LikeCount,

@@ -272,11 +272,17 @@ class UpdatePostRequest {
   final String? title;
   final String? content;
   final int? visibility;
+  final int? tmdbId;
+  final String? mediaType;
+  final String? posterPath;
 
   UpdatePostRequest({
     this.title,
     this.content,
     this.visibility,
+    this.tmdbId,
+    this.mediaType,
+    this.posterPath,
   });
 
   Map<String, dynamic> toJson() {
@@ -284,6 +290,9 @@ class UpdatePostRequest {
       'title': title,
       'content': content,
       'visibility': visibility,
+      'tmdbId': tmdbId,
+      'mediaType': mediaType,
+      'posterPath': posterPath,
     };
   }
 }

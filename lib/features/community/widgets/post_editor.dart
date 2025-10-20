@@ -56,7 +56,7 @@ class _PostEditorState extends ConsumerState<PostEditor> {
       _visibility = widget.initialVisibility!;
     }
 
-    // If tmdbId is provided (e.g., creating from a movie context), prefetch title/poster
+    // If tmdbId is provided (e.g., creating from a movie context or editing), prefetch title/poster
     if (widget.tmdbId != null) {
       _prefillFromTmdb(widget.tmdbId!, widget.mediaType ?? 'movie');
     }
@@ -145,6 +145,9 @@ class _PostEditorState extends ConsumerState<PostEditor> {
           title: _titleController.text.trim().isEmpty ? null : _titleController.text.trim(),
           content: _contentController.text.trim(),
           visibility: newVisibility,
+          tmdbId: _selectedTmdbId,
+          mediaType: _selectedMediaType,
+          posterPath: _getPosterPath(),
         );
         
         await ref.read(postsProvider.notifier).updatePost(widget.postId!, request);
@@ -265,12 +268,12 @@ class _PostEditorState extends ConsumerState<PostEditor> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: (_selectedMovieTitle != null || widget.tmdbId != null)
+                              color: (_selectedMovieTitle != null || _selectedTmdbId != null)
                                   ? Theme.of(context).primaryColor.withOpacity(0.1)
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: (_selectedMovieTitle != null || widget.tmdbId != null)
+                                color: (_selectedMovieTitle != null || _selectedTmdbId != null)
                                     ? Theme.of(context).primaryColor
                                     : Colors.grey[300]!,
                               ),
@@ -281,14 +284,14 @@ class _PostEditorState extends ConsumerState<PostEditor> {
                                 return Text(
                                   _selectedMovieTitle != null 
                                       ? _selectedMovieTitle!
-                                      : widget.tmdbId != null 
+                                      : _selectedTmdbId != null 
                                           ? 'Đang viết về ${widget.mediaType == 'tv' ? 'TV Show' : 'Movie'}'
                                           : 'Chọn phim (tùy chọn)',
                                   style: TextStyle(
-                                    color: (_selectedMovieTitle != null || widget.tmdbId != null)
+                                    color: (_selectedMovieTitle != null || _selectedTmdbId != null)
                                         ? Theme.of(context).primaryColor
                                         : Colors.grey[600],
-                                    fontWeight: (_selectedMovieTitle != null || widget.tmdbId != null)
+                                    fontWeight: (_selectedMovieTitle != null || _selectedTmdbId != null)
                                         ? FontWeight.bold 
                                         : FontWeight.normal,
                                     fontSize: 16,
@@ -298,16 +301,19 @@ class _PostEditorState extends ConsumerState<PostEditor> {
                             ),
                           ),
                         ),
-                        if (_selectedMovieTitle != null || widget.tmdbId != null)
+                        if (_selectedMovieTitle != null || _selectedTmdbId != null)
                           IconButton(
                             icon: const Icon(Icons.close, size: 20),
                             onPressed: () {
                               setState(() {
                                 _selectedMovieTitle = null;
+                                _selectedTmdbId = null;
+                                _selectedMediaType = null;
+                                _selectedPosterPath = null;
                               });
                             },
                           ),
-                        if (_selectedMovieTitle == null && widget.tmdbId == null)
+                        if (_selectedMovieTitle == null && _selectedTmdbId == null)
                           TextButton(
                             onPressed: () {
                               _showMoviePicker();

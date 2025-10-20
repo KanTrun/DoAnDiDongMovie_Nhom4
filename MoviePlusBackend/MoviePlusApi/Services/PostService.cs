@@ -263,6 +263,7 @@ namespace MoviePlusApi.Services
         public async Task<PostDetailDto?> UpdatePostAsync(long id, UpdatePostDto request, Guid userId)
         {
             var post = await _context.Posts
+                .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
 
             if (post == null)
@@ -290,6 +291,15 @@ namespace MoviePlusApi.Services
                 post.PosterPath = request.PosterPath;
             }
 
+            if (request.TmdbId.HasValue)
+            {
+                post.TmdbId = request.TmdbId.Value;
+            }
+            if (!string.IsNullOrEmpty(request.MediaType))
+            {
+                post.MediaType = request.MediaType;
+            }
+
             post.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -297,7 +307,7 @@ namespace MoviePlusApi.Services
             return new PostDetailDto(
                 post.Id,
                 post.UserId,
-                post.User.DisplayName ?? post.User.Email,
+                post.User?.DisplayName ?? post.User?.Email ?? "Unknown User",
                 post.TmdbId,
                 post.MediaType,
                 post.Title,

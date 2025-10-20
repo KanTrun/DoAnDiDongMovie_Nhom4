@@ -83,7 +83,7 @@ class PostHeader extends StatelessWidget {
             ),
           ),
         
-        // Movie info
+        // Movie info + poster
         if (post.tmdbId != null)
           Container(
             padding: const EdgeInsets.all(12),
@@ -92,17 +92,49 @@ class PostHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  post.mediaType == 'tv' ? Icons.tv : Icons.movie,
-                  color: Theme.of(context).primaryColor,
+                Container(
+                  width: 60,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    color: Colors.grey[300],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: post.posterPath != null && post.posterPath!.isNotEmpty
+                        ? Image.network(
+                            'https://image.tmdb.org/t/p/w200${post.posterPath}',
+                            fit: BoxFit.cover,
+                          )
+                        : Icon(
+                            post.mediaType == 'tv' ? Icons.tv : Icons.movie,
+                            color: Colors.grey[600],
+                          ),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Về ${post.mediaType == 'tv' ? 'TV Show' : 'Movie'}',
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Về ${post.mediaType == 'tv' ? 'TV Show' : 'Movie'}',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (post.title != null && post.title!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            post.title!,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],

@@ -17,7 +17,9 @@ namespace MoviePlusApi.DTOs
         string? Title,
         string? Content,
         byte? Visibility,
-        string? PosterPath = null
+        string? PosterPath = null,
+        int? TmdbId = null,
+        string? MediaType = null
     );
 
     // Post List Item DTO (for feeds)
