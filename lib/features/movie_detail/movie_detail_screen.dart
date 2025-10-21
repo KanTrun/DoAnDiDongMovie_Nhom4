@@ -35,6 +35,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
   // ScrollControllers
   late final ScrollController _videoScrollController;
   late final ScrollController _castScrollController;
+  late final ScrollController _crewScrollController;
   late final ScrollController _similarMoviesScrollController;
   late final ScrollController _mainScrollController;
 
@@ -49,6 +50,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
     // Initialize ScrollControllers only once
     _videoScrollController = ScrollController();
     _castScrollController = ScrollController();
+    _crewScrollController = ScrollController();
     _similarMoviesScrollController = ScrollController();
     _mainScrollController = ScrollController();
     
@@ -87,6 +89,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
   void dispose() {
     _videoScrollController.dispose();
     _castScrollController.dispose();
+    _crewScrollController.dispose();
     _similarMoviesScrollController.dispose();
     _mainScrollController.dispose();
     _heroAnimationController.dispose();
@@ -984,12 +987,12 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
               SizedBox(
                 height: 100, // Increased height to prevent overflow
                 child: Scrollbar(
-                  controller: _castScrollController,
+                  controller: _crewScrollController,
                   thumbVisibility: true,
                   thickness: 6,
                   radius: const Radius.circular(10),
                   child: ListView.builder(
-                    controller: _castScrollController,
+                    controller: _crewScrollController,
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                     physics: const BouncingScrollPhysics(),
@@ -1159,41 +1162,145 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen>
       );
     }
 
-    final controller = YoutubePlayerController.fromVideoId(
-      videoId: videoId,
-      autoPlay: true,
-      params: const YoutubePlayerParams(
-        showFullscreenButton: true,
-        showControls: true,
-        enableCaption: true,
-        playsInline: true,
-        enableJavaScript: true,
-      ),
-    );
+    try {
+      // Add delay to ensure proper WebView initialization
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      final controller = YoutubePlayerController.fromVideoId(
+        videoId: videoId,
+        autoPlay: false, // Disable auto-play to prevent rendering issues
+        params: const YoutubePlayerParams(
+          showFullscreenButton: true,
+          showControls: true,
+          enableCaption: true,
+          playsInline: true,
+          enableJavaScript: true,
+          mute: false,
+          loop: false,
+          strictRelatedVideos: false, // Allow related videos for better compatibility
+        ),
+      );
 
-    await showGeneralDialog(
-      context: context,
-      barrierLabel: 'Trailer',
-      barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.9),
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (ctx, anim1, anim2) {
-        return FadeTransition(
-          opacity: anim1,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-              CurvedAnimation(parent: anim1, curve: Curves.easeOut),
+      await showGeneralDialog(
+        context: context,
+        barrierLabel: 'Trailer',
+        barrierDismissible: true,
+        barrierColor: Colors.black.withOpacity(0.9),
+        transitionDuration: const Duration(milliseconds: 500), // Slower transition
+        pageBuilder: (ctx, anim1, anim2) {
+          return FadeTransition(
+            opacity: anim1,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.9, end: 1.0).animate( // Less dramatic scale
+                CurvedAnimation(parent: anim1, curve: Curves.easeOut),
+              ),
+              child: _VideoPlayerWithTranslation(
+                controller: controller,
+                title: title,
+              ),
             ),
-            child: _VideoPlayerWithTranslation(
-              controller: controller,
-              title: title,
+          );
+        },
+      );
+
+      // Don't close controller here - let the widget dispose handle it
+    } catch (e) {
+      // Show error dialog if trailer fails to load
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1A1A1A),
+            title: const Text(
+              'Không thể phát trailer',
+              style: TextStyle(color: Colors.white),
             ),
+            content: Text(
+              'Trailer không thể tải được trong ứng dụng. Bạn có thể xem trên YouTube.\n\nLỗi: ${e.toString()}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Đóng',
+                  style: TextStyle(color: Colors.blue),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _openTrailerDialog(videoId, title); // Retry
+                },
+                child: const Text(
+                  'Thử lại',
+                  style: TextStyle(color: Colors.green),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _openYouTubeInBrowser(videoId, title); // Open in browser
+                },
+                child: const Text(
+                  'Mở YouTube',
+                  style: TextStyle(color: Color(0xFFE50914)),
+                ),
+              ),
+            ],
           ),
         );
-      },
-    );
+      }
+    }
+  }
 
-    controller.close();
+  // Fallback: Open YouTube in browser
+  Future<void> _openYouTubeInBrowser(String videoId, String title) async {
+    try {
+      final url = 'https://www.youtube.com/watch?v=$videoId';
+      // You can use url_launcher here if available
+      // await launchUrl(Uri.parse(url));
+      print('YouTube URL: $url');
+      
+      // Show URL to user as fallback
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1A1A1A),
+            title: const Text(
+              'Mở YouTube',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Copy link này để mở trên YouTube:',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                SelectableText(
+                  url,
+                  style: const TextStyle(color: Colors.blue),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Đóng',
+                  style: TextStyle(color: Colors.blue),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error opening YouTube: $e');
+    }
   }
 
   // =========================
@@ -1958,11 +2065,24 @@ class _VideoPlayerWithTranslation extends StatefulWidget {
 class _VideoPlayerWithTranslationState extends State<_VideoPlayerWithTranslation> {
   final TranslationService _translationService = TranslationService();
   bool _isTranslationEnabled = false;
+  bool _isPlayerReady = false;
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
     _initializeTranslation();
+    _initializePlayer();
+  }
+
+  Future<void> _initializePlayer() async {
+    // Wait for player to be ready before showing
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (mounted && !_isDisposed) {
+      setState(() {
+        _isPlayerReady = true;
+      });
+    }
   }
 
   Future<void> _initializeTranslation() async {
@@ -1991,8 +2111,57 @@ class _VideoPlayerWithTranslationState extends State<_VideoPlayerWithTranslation
 
   @override
   void dispose() {
+    _isDisposed = true;
     _translationService.stopListening();
+    // Properly dispose YouTube controller to prevent MediaQuery errors
+    try {
+      widget.controller.close();
+    } catch (e) {
+      // Ignore disposal errors
+    }
     super.dispose();
+  }
+
+  // Build YouTube player with error handling
+  Widget _buildYouTubePlayer() {
+    try {
+      return YoutubePlayerScaffold(
+        controller: widget.controller,
+        builder: (context, player) => player,
+      );
+    } catch (e) {
+      // Fallback to simple container if player fails
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.play_circle_outline,
+                color: Color(0xFFE50914),
+                size: 64,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Không thể tải video',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                'Vui lòng thử lại',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -2074,10 +2243,16 @@ class _VideoPlayerWithTranslationState extends State<_VideoPlayerWithTranslation
                     ),
                   ),
                   Expanded(
-                    child: YoutubePlayerScaffold(
-                      controller: widget.controller,
-                      builder: (context, player) => player,
-                    ),
+                    child: _isPlayerReady && !_isDisposed
+                      ? _buildYouTubePlayer()
+                      : Container(
+                          color: Colors.black,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFE50914),
+                            ),
+                          ),
+                        ),
                   ),
                 ],
               ),

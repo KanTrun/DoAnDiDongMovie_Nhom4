@@ -1112,41 +1112,86 @@ class _TvShowDetailScreenState extends ConsumerState<TvShowDetailScreen>
   //     POPUP TRAILER
   // =========================
   Future<void> _openTrailerDialog(String videoId, String title) async {
-    final controller = YoutubePlayerController.fromVideoId(
-      videoId: videoId,
-      autoPlay: true,
-      params: const YoutubePlayerParams(
-        showFullscreenButton: true,
-        showControls: true,
-        enableCaption: true,
-        playsInline: true,
-        enableJavaScript: true,
-      ),
-    );
+    try {
+      // Add delay to ensure proper WebView initialization
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      final controller = YoutubePlayerController.fromVideoId(
+        videoId: videoId,
+        autoPlay: false, // Disable auto-play to prevent rendering issues
+        params: const YoutubePlayerParams(
+          showFullscreenButton: true,
+          showControls: true,
+          enableCaption: true,
+          playsInline: true,
+          enableJavaScript: true,
+          mute: false,
+          loop: false,
+          strictRelatedVideos: false, // Allow related videos for better compatibility
+        ),
+      );
 
-    await showGeneralDialog(
-      context: context,
-      barrierLabel: 'Trailer',
-      barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.9),
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (ctx, anim1, anim2) {
-        return FadeTransition(
-          opacity: anim1,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-              CurvedAnimation(parent: anim1, curve: Curves.easeOut),
+      await showGeneralDialog(
+        context: context,
+        barrierLabel: 'Trailer',
+        barrierDismissible: true,
+        barrierColor: Colors.black.withOpacity(0.9),
+        transitionDuration: const Duration(milliseconds: 500), // Slower transition
+        pageBuilder: (ctx, anim1, anim2) {
+          return FadeTransition(
+            opacity: anim1,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.9, end: 1.0).animate( // Less dramatic scale
+                CurvedAnimation(parent: anim1, curve: Curves.easeOut),
+              ),
+              child: _VideoPlayerWithTranslation(
+                controller: controller,
+                title: title,
+              ),
             ),
-            child: _VideoPlayerWithTranslation(
-              controller: controller,
-              title: title,
+          );
+        },
+      );
+
+      // Don't close controller here - let the widget dispose handle it
+    } catch (e) {
+      // Show error dialog if trailer fails to load
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1A1A1A),
+            title: const Text(
+              'Không thể phát trailer',
+              style: TextStyle(color: Colors.white),
             ),
+            content: Text(
+              'Trailer không thể tải được. Vui lòng kiểm tra kết nối mạng và thử lại.\n\nLỗi: ${e.toString()}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Đóng',
+                  style: TextStyle(color: Colors.blue),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _openTrailerDialog(videoId, title); // Retry
+                },
+                child: const Text(
+                  'Thử lại',
+                  style: TextStyle(color: Colors.green),
+                ),
+              ),
+            ],
           ),
         );
-      },
-    );
-
-    controller.close();
+      }
+    }
   }
 }
 
@@ -1786,11 +1831,24 @@ class _VideoPlayerWithTranslation extends StatefulWidget {
 class _VideoPlayerWithTranslationState extends State<_VideoPlayerWithTranslation> {
   final TranslationService _translationService = TranslationService();
   bool _isTranslationEnabled = false;
+  bool _isPlayerReady = false;
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
     _initializeTranslation();
+    _initializePlayer();
+  }
+
+  Future<void> _initializePlayer() async {
+    // Wait for player to be ready before showing
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (mounted && !_isDisposed) {
+      setState(() {
+        _isPlayerReady = true;
+      });
+    }
   }
 
   Future<void> _initializeTranslation() async {
@@ -1819,7 +1877,14 @@ class _VideoPlayerWithTranslationState extends State<_VideoPlayerWithTranslation
 
   @override
   void dispose() {
+    _isDisposed = true;
     _translationService.stopListening();
+    // Properly dispose YouTube controller to prevent MediaQuery errors
+    try {
+      widget.controller.close();
+    } catch (e) {
+      // Ignore disposal errors
+    }
     super.dispose();
   }
 
@@ -1902,11 +1967,20 @@ class _VideoPlayerWithTranslationState extends State<_VideoPlayerWithTranslation
                     ),
                   ),
                   Expanded(
-                    child: YoutubePlayerScaffold(
-                      controller: widget.controller,
-                      builder: (context, player) => player,
-                    ),
-              ),
+                    child: _isPlayerReady && !_isDisposed
+                      ? YoutubePlayerScaffold(
+                          controller: widget.controller,
+                          builder: (context, player) => player,
+                        )
+                      : Container(
+                          color: Colors.black,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFE50914),
+                            ),
+                          ),
+                        ),
+                  ),
             ],
           ),
               if (_isTranslationEnabled)
