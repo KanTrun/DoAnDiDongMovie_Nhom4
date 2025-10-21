@@ -15,6 +15,12 @@ import 'features/movie_detail/tv_show_detail_screen.dart';
 import 'features/person/person_detail_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
+import 'features/auth/screens/enable_2fa_screen.dart';
+import 'features/auth/screens/verify_2fa_screen.dart';
+import 'features/auth/screens/login_with_2fa_screen.dart';
+import 'features/auth/screens/security_settings_screen.dart';
+import 'features/auth/screens/disable_2fa_screen.dart';
+import 'features/auth/screens/biometric_2fa_screen.dart';
 
 class MoviePlusApp extends ConsumerStatefulWidget {
   const MoviePlusApp({super.key});
@@ -80,6 +86,44 @@ class _MoviePlusAppState extends ConsumerState<MoviePlusApp> {
           path: '/register',
           name: 'register',
           builder: (context, state) => const RegisterScreen(),
+        ),
+        
+        // 2FA routes
+        GoRoute(
+          path: '/enable-2fa',
+          name: 'enable-2fa',
+          builder: (context, state) => const Enable2FAScreen(),
+        ),
+        GoRoute(
+          path: '/verify-2fa',
+          name: 'verify-2fa',
+          builder: (context, state) => const Verify2FAScreen(),
+        ),
+        GoRoute(
+          path: '/login-with-2fa',
+          name: 'login-with-2fa',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return LoginWith2FAScreen(
+              email: extra?['email'] ?? '',
+              password: extra?['password'] ?? '',
+            );
+          },
+        ),
+        GoRoute(
+          path: '/security-settings',
+          name: 'security-settings',
+          builder: (context, state) => const SecuritySettingsScreen(),
+        ),
+        GoRoute(
+          path: '/disable-2fa',
+          name: 'disable-2fa',
+          builder: (context, state) => const Disable2FAScreen(),
+        ),
+        GoRoute(
+          path: '/biometric-2fa',
+          name: 'biometric-2fa',
+          builder: (context, state) => const Biometric2FAScreen(),
         ),
         
         // Shell route with bottom navigation

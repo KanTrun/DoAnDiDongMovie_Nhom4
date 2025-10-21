@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user.dart';
 import '../auth/jwt_storage.dart';
 import '../services/auth_service.dart';
+import '../services/two_factor_service.dart' hide User;
 import 'package:local_auth/local_auth.dart';
 
 // Storage provider
@@ -181,6 +181,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // Set auth state for 2FA login
+  void setAuthState(User user, String token) {
+    state = AuthState(
+      user: user,
+      token: token,
+      isLoading: false,
+      error: null,
+    );
+  }
+
 
   // Biometric login with account selection support
   Future<Map<String, dynamic>> loginWithBiometrics() async {
@@ -219,6 +229,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Chỉ có 1 tài khoản - đăng nhập luôn
         final response = AuthResponse.fromJson(result);
         await _saveAuthData(response);
+        
+        // Kiểm tra 2FA sau khi đăng nhập thành công
+        final needs2FA = await _check2FARequired();
+        if (needs2FA) {
+          return {
+            'success': false,
+            'needs2FA': true,
+            'message': 'Cần xác thực 2 lớp để hoàn tất đăng nhập'
+          };
+        }
+        
         return {'success': true};
       }
     } catch (e) {
@@ -226,45 +247,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> _showAccountSelectionDialog(List accounts, String template) async {
-    print('🔍 DEBUG: Có ${accounts.length} tài khoản cùng vân tay');
-    for (int i = 0; i < accounts.length; i++) {
-      final account = accounts[i];
-      print('👤 DEBUG: Tài khoản $i: ${account.toString()}');
-    }
-    
-    if (accounts.isNotEmpty) {
-      print('🎯 DEBUG: Cần hiển thị dialog chọn tài khoản');
-      print('⚠️ DEBUG: Tạm thời chọn tài khoản đầu tiên - cần implement UI');
-      
-      // Tạm thời chọn tài khoản đầu tiên để test
-      // TODO: Implement proper account selection dialog
-      final firstAccount = accounts.first;
-      print('✅ DEBUG: Chọn tài khoản đầu tiên (tạm thời)');
-      print('🔍 DEBUG: Account data: ${firstAccount.toString()}');
-      
-      // Tìm ID của tài khoản (có thể là 'Id', 'id', hoặc 'userId')
-      String? accountId = firstAccount['Id'] ?? firstAccount['id'] ?? firstAccount['userId'];
-      
-      if (accountId != null) {
-        print('🔑 DEBUG: Account ID = $accountId');
-        final response = await AuthService.loginBiometricAccount(template, accountId);
-        await _saveAuthData(response);
-        return true;
-      } else {
-        print('❌ DEBUG: Không tìm thấy Account ID');
-        return false;
-      }
-    }
-    return false;
-  }
-
-  // Hiển thị dialog chọn tài khoản
-  Future<bool> _showAccountSelectionUI(List accounts, String template) async {
-    // TODO: Implement proper account selection UI
-    // For now, return false to indicate no selection made
-    return false;
-  }
 
   Future<void> _saveAuthData(AuthResponse response) async {
     await _storage.write(key: _tokenKey, value: response.token);
@@ -274,15 +256,61 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = AuthState(user: response.user, token: response.token);
   }
 
+  // Check if user needs 2FA after biometric login
+  Future<bool> _check2FARequired() async {
+    try {
+      final status = await TwoFactorService.get2FAStatus();
+      return status.twoFactorEnabled;
+    } catch (e) {
+      print('❌ DEBUG: Lỗi kiểm tra 2FA status: $e');
+      return false;
+    }
+  }
+
+  // Complete 2FA after biometric login
+  Future<bool> complete2FAAfterBiometric(String totpCode) async {
+    try {
+      final response = await TwoFactorService.complete2FABiometric(totpCode);
+      
+      // Update auth state
+      final user = User.fromJson({
+        'id': response.user.id,
+        'email': response.user.email,
+        'displayName': response.user.displayName,
+        'role': response.user.role,
+        'bioAuthEnabled': response.user.twoFactorEnabled,
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+      
+      setAuthState(user, response.token);
+      return true;
+    } catch (e) {
+      print('❌ DEBUG: Lỗi hoàn tất 2FA: $e');
+      return false;
+    }
+  }
+
   // Đăng nhập với tài khoản đã chọn
-  Future<bool> loginWithSelectedAccount(String template, String accountId) async {
+  Future<Map<String, dynamic>> loginWithSelectedAccount(String template, String accountId) async {
     try {
       final response = await AuthService.loginBiometricAccount(template, accountId);
       await _saveAuthData(response);
-      return true;
+      
+      // Kiểm tra 2FA sau khi đăng nhập thành công
+      final needs2FA = await _check2FARequired();
+      if (needs2FA) {
+        return {
+          'success': false,
+          'needs2FA': true,
+          'message': 'Cần xác thực 2 lớp để hoàn tất đăng nhập'
+        };
+      }
+      
+      return {'success': true};
     } catch (e) {
       print('❌ DEBUG: Lỗi đăng nhập tài khoản đã chọn: $e');
-      return false;
+      return {'success': false, 'error': e.toString()};
     }
   }
 
@@ -342,18 +370,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       // Cập nhật state để bioAuthEnabled = true
       if (state.user != null) {
-        final updatedUser = User(
-          userId: state.user!.userId,
-          email: state.user!.email,
-          username: state.user!.username,
-          fullName: state.user!.fullName,
-          profilePicture: state.user!.profilePicture,
-          role: state.user!.role,
-          bioAuthEnabled: true,
-          lastLogin: state.user!.lastLogin,
-          createdAt: state.user!.createdAt,
-          updatedAt: state.user!.updatedAt,
-        );
+        final userJson = state.user!.toJson();
+        userJson['bioAuthEnabled'] = true;
+        final updatedUser = User.fromJson(userJson);
         state = state.copyWith(user: updatedUser);
         print('🔄 DEBUG: Đã cập nhật bioAuthEnabled = true');
       }
@@ -382,18 +401,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       
       // Cập nhật state để bioAuthEnabled = false
       if (state.user != null) {
-        final updatedUser = User(
-          userId: state.user!.userId,
-          email: state.user!.email,
-          username: state.user!.username,
-          fullName: state.user!.fullName,
-          profilePicture: state.user!.profilePicture,
-          role: state.user!.role,
-          bioAuthEnabled: false,
-          lastLogin: state.user!.lastLogin,
-          createdAt: state.user!.createdAt,
-          updatedAt: state.user!.updatedAt,
-        );
+        final userJson = state.user!.toJson();
+        userJson['bioAuthEnabled'] = false;
+        final updatedUser = User.fromJson(userJson);
         state = state.copyWith(user: updatedUser);
         print('🔄 DEBUG: Đã cập nhật bioAuthEnabled = false');
       }

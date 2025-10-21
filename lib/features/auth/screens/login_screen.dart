@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/services/two_factor_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -67,7 +68,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       );
       
       if (mounted && ref.read(isAuthenticatedProvider)) {
-        context.go('/home');
+        // Check if user has 2FA enabled by calling API
+        try {
+          final authState = ref.read(authProvider);
+          print('🔍 DEBUG: Checking 2FA status for user: ${authState.user?.email}');
+          
+          // Call API to check actual 2FA status
+          final twoFAStatus = await TwoFactorService.get2FAStatus();
+          print('🔍 DEBUG: 2FA status: ${twoFAStatus.twoFactorEnabled}');
+          
+          if (twoFAStatus.twoFactorEnabled) {
+            // User has 2FA enabled, navigate to 2FA screen
+            context.push('/login-with-2fa', extra: {
+              'email': _emailController.text.trim(),
+              'password': _passwordController.text,
+            });
+          } else {
+            // Normal login, go to home
+            context.go('/home');
+          }
+        } catch (e) {
+          print('❌ DEBUG: Error checking 2FA status: $e');
+          // If error checking 2FA, assume no 2FA and go to home
+          context.go('/home');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -102,6 +126,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     
     if (result['success'] == true && mounted && ref.read(isAuthenticatedProvider)) {
       context.go('/home');
+    } else if (result['needs2FA'] == true && mounted) {
+      // Cần xác thực 2FA sau khi đăng nhập vân tay thành công
+      context.push('/biometric-2fa');
     } else if (result['needsSelection'] == true && mounted) {
       // Hiển thị dialog chọn tài khoản
       await _showAccountSelectionDialog(result['accounts'], result['template']);
@@ -184,8 +211,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       final accountId = account['Id'] ?? account['id'] ?? account['userId'];
       if (accountId != null) {
         final response = await ref.read(authProvider.notifier).loginWithSelectedAccount(template, accountId);
-        if (response && mounted && ref.read(isAuthenticatedProvider)) {
+        
+        if (response['success'] == true && mounted && ref.read(isAuthenticatedProvider)) {
           context.go('/home');
+        } else if (response['needs2FA'] == true && mounted) {
+          // Cần xác thực 2FA sau khi đăng nhập vân tay thành công
+          context.push('/biometric-2fa');
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['error'] ?? 'Lỗi đăng nhập'),
+              backgroundColor: const Color(0xFFE50914),
+            ),
+          );
         }
       }
     } catch (e) {

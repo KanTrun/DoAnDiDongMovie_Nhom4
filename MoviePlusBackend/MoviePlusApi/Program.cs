@@ -25,6 +25,8 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 // Community services
 builder.Services.AddScoped<IPostService, PostService>();
+// Two-Factor Authentication service
+builder.Services.AddScoped<ITotpService, TotpService>();
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

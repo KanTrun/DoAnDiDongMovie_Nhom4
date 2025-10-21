@@ -56,6 +56,11 @@ dependencies:
   translator: ^1.0.4+1
   permission_handler: ^11.0.1
   
+  # Two-Factor Authentication
+  mobile_scanner: ^5.0.0
+  qr_flutter: ^4.1.0
+  otp: ^3.1.0
+  
   # Models and serialization
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1

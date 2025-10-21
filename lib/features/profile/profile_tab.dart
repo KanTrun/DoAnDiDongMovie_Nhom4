@@ -453,7 +453,7 @@ class ProfileTab extends ConsumerWidget {
         'title': 'Bảo mật',
         'subtitle': 'Đổi mật khẩu và cài đặt bảo mật',
         'onTap': () {
-          // Navigate to security settings
+          context.push('/security-settings');
         },
       },
       {

@@ -27,6 +27,14 @@ namespace MoviePlusApi.Models
         [MaxLength(1000)]
         public string? BiometricTemplate { get; set; }
 
+        // Two-Factor Authentication fields
+        public bool TwoFactorEnabled { get; set; } = false;
+
+        [MaxLength(500)]
+        public string? TwoFactorSecret { get; set; }
+
+        public DateTime? TwoFactorEnabledAt { get; set; }
+
         [Required]
         [MaxLength(20)]
         public string Role { get; set; } = "User";
