@@ -13,4 +13,9 @@ class AppConfig {
     'TMDB_LANGUAGE',
     defaultValue: 'vi-VN',
   );
+  
+  static const String geminiApiKey = String.fromEnvironment(
+    'GEMINI_API_KEY',
+    defaultValue: 'AIzaSyBNJ2D5wY1_COnZBRDmLciejEgEiSvzEv0',
+  );
 }

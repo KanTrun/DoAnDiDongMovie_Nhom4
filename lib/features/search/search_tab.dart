@@ -6,6 +6,7 @@ import '../../core/models/movie.dart';
 import '../../core/providers/tmdb_provider.dart';
 import '../../core/services/translation_service.dart';
 import '../../core/widgets/speech_to_text_widget.dart';
+import 'ai_search_tab.dart';
 
 class SearchTab extends ConsumerStatefulWidget {
   const SearchTab({super.key});
@@ -24,7 +25,7 @@ class _SearchTabState extends ConsumerState<SearchTab>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -53,6 +54,7 @@ class _SearchTabState extends ConsumerState<SearchTab>
                 _buildQuickSearchTab(),
                 _buildMoviesTab(),
                 _buildTvShowsTab(),
+                const AiSearchTab(),
               ],
             ),
           ),
@@ -274,6 +276,7 @@ class _SearchTabState extends ConsumerState<SearchTab>
                             Tab(text: 'Tất Cả'),
                             Tab(text: 'Phim'),
                             Tab(text: 'TV Show'),
+                            Tab(text: 'AI Search'),
                           ],
                         ),
                       ),
