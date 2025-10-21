@@ -166,3 +166,6 @@ D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\MoviePl
 D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\MoviePlusApi.genruntimeconfig.cache
 D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\ref\MoviePlusApi.dll
 D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\obj\Debug\net9.0\MoviePlusApi.sourcelink.json
+D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
+D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\doandidongmobile_nhom4\MoviePlusBackend\MoviePlusApi\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
