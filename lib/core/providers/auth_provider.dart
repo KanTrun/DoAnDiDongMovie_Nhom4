@@ -260,7 +260,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> _check2FARequired() async {
     try {
       final status = await TwoFactorService.get2FAStatus();
-      return status.twoFactorEnabled;
+      print('🔍 DEBUG: 2FA Status: ${status.twoFactorEnabled}');
+      print('🔍 DEBUG: 2FA Enabled At: ${status.twoFactorEnabledAt}');
+      
+      // Chỉ yêu cầu 2FA nếu user đã thực sự setup 2FA
+      return status.twoFactorEnabled && status.twoFactorEnabledAt != null;
     } catch (e) {
       print('❌ DEBUG: Lỗi kiểm tra 2FA status: $e');
       return false;

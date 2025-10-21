@@ -76,8 +76,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           // Call API to check actual 2FA status
           final twoFAStatus = await TwoFactorService.get2FAStatus();
           print('🔍 DEBUG: 2FA status: ${twoFAStatus.twoFactorEnabled}');
+          print('🔍 DEBUG: 2FA enabled at: ${twoFAStatus.twoFactorEnabledAt}');
           
-          if (twoFAStatus.twoFactorEnabled) {
+          // Chỉ yêu cầu 2FA nếu user đã thực sự setup 2FA
+          if (twoFAStatus.twoFactorEnabled && twoFAStatus.twoFactorEnabledAt != null) {
             // User has 2FA enabled, navigate to 2FA screen
             context.push('/login-with-2fa', extra: {
               'email': _emailController.text.trim(),
@@ -164,7 +166,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
             const SizedBox(height: 16),
             ...accounts.asMap().entries.map((entry) {
-              final index = entry.key;
               final account = entry.value;
               final email = account['Email'] ?? account['email'] ?? 'Unknown';
               final displayName = account['DisplayName'] ?? account['displayName'] ?? 'User';
