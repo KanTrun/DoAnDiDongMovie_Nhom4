@@ -18,10 +18,12 @@ void main() async {
     ),
   );
   
-  // Set preferred orientations
+  // Set preferred orientations - Allow all orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
   ]);
 
   // Initialize translation service
