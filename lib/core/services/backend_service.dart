@@ -58,7 +58,7 @@ class BackendService {
 
   static Future<void> removeFavorite(String token, int tmdbId, {String mediaType = 'movie'}) async {
     try {
-      await ApiClient.backend(token: token).delete('/favorites/$tmdbId?mediaType=$mediaType');
+      await ApiClient.backend(token: token).delete('/api/favorites/$tmdbId?mediaType=$mediaType');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -66,7 +66,7 @@ class BackendService {
 
   static Future<bool> isFavorite(String token, int movieId) async {
     try {
-      final response = await ApiClient.backend(token: token).get('/favorites/$movieId');
+      final response = await ApiClient.backend(token: token).get('/api/favorites/$movieId');
       return response.data['isFavorite'] ?? false;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return false;
@@ -130,7 +130,7 @@ class BackendService {
 
   static Future<void> removeFromWatchlist(String token, int tmdbId, {String mediaType = 'movie'}) async {
     try {
-      await ApiClient.backend(token: token).delete('/watchlist/$tmdbId?mediaType=$mediaType');
+      await ApiClient.backend(token: token).delete('/api/watchlist/$tmdbId?mediaType=$mediaType');
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -138,7 +138,7 @@ class BackendService {
 
   static Future<bool> isInWatchlist(String token, int movieId) async {
     try {
-      final response = await ApiClient.backend(token: token).get('/watchlist/$movieId');
+      final response = await ApiClient.backend(token: token).get('/api/watchlist/$movieId');
       return response.data['isInWatchlist'] ?? false;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return false;
@@ -317,8 +317,13 @@ class BackendService {
   }
 
   static String _handleError(DioException e) {
-    if (e.response?.data != null && e.response?.data['message'] != null) {
-      return e.response!.data['message'];
+    if (e.response?.data != null) {
+      final data = e.response!.data;
+      if (data is Map<String, dynamic> && data['message'] != null) {
+        return data['message'].toString();
+      } else if (data is String) {
+        return data;
+      }
     }
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
