@@ -16,14 +16,20 @@ namespace MoviePlusApi.Services.Chat
         {
             _context = context;
             _httpClient = new HttpClient();
-            _fcmServerKey = configuration["FCM:ServerKey"] ?? throw new InvalidOperationException("FCM ServerKey not configured");
+            _fcmServerKey = configuration["FCM:ServerKey"];
             
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"key={_fcmServerKey}");
-            _httpClient.DefaultRequestHeaders.Add("Content-Type", "application/json");
+            if (!string.IsNullOrEmpty(_fcmServerKey))
+            {
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"key={_fcmServerKey}");
+                _httpClient.DefaultRequestHeaders.Add("Content-Type", "application/json");
+            }
         }
 
         public async Task SendPushAsync(Guid userId, string title, string body, object? data = null)
         {
+            // Skip push notification if FCM ServerKey is not configured
+            if (string.IsNullOrEmpty(_fcmServerKey)) return;
+            
             var deviceTokens = await GetDeviceTokensAsync(userId);
             if (!deviceTokens.Any()) return;
 

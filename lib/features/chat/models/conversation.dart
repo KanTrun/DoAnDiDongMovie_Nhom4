@@ -10,7 +10,7 @@ class Conversation with _$Conversation {
     required int id,
     required bool isGroup,
     String? title,
-    required int createdBy,
+    required String createdBy,
     required DateTime createdAt,
     DateTime? lastMessageAt,
     @Default([]) List<Participant> participants,
@@ -25,7 +25,7 @@ class Conversation with _$Conversation {
 @freezed
 class Participant with _$Participant {
   const factory Participant({
-    required int userId,
+    required String userId,
     String? role,
     required DateTime joinedAt,
     String? userName,

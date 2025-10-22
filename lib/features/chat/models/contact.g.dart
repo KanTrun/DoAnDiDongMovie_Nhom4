@@ -8,11 +8,11 @@ part of 'contact.dart';
 
 _$ContactImpl _$$ContactImplFromJson(Map<String, dynamic> json) =>
     _$ContactImpl(
-      id: (json['id'] as num).toInt(),
+      id: json['id'] as String,
       userName: json['userName'] as String,
       email: json['email'] as String,
       avatar: json['avatar'] as String?,
-      isOnline: json['isOnline'] as bool? ?? false,
+      isOnline: json['isOnline'] as bool,
     );
 
 Map<String, dynamic> _$$ContactImplToJson(_$ContactImpl instance) =>

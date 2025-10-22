@@ -24,7 +24,7 @@ mixin _$Conversation {
   int get id => throw _privateConstructorUsedError;
   bool get isGroup => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
-  int get createdBy => throw _privateConstructorUsedError;
+  String get createdBy => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime? get lastMessageAt => throw _privateConstructorUsedError;
   List<Participant> get participants => throw _privateConstructorUsedError;
@@ -52,7 +52,7 @@ abstract class $ConversationCopyWith<$Res> {
     int id,
     bool isGroup,
     String? title,
-    int createdBy,
+    String createdBy,
     DateTime createdAt,
     DateTime? lastMessageAt,
     List<Participant> participants,
@@ -105,7 +105,7 @@ class _$ConversationCopyWithImpl<$Res, $Val extends Conversation>
             createdBy: null == createdBy
                 ? _value.createdBy
                 : createdBy // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -159,7 +159,7 @@ abstract class _$$ConversationImplCopyWith<$Res>
     int id,
     bool isGroup,
     String? title,
-    int createdBy,
+    String createdBy,
     DateTime createdAt,
     DateTime? lastMessageAt,
     List<Participant> participants,
@@ -212,7 +212,7 @@ class __$$ConversationImplCopyWithImpl<$Res>
         createdBy: null == createdBy
             ? _value.createdBy
             : createdBy // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -263,7 +263,7 @@ class _$ConversationImpl implements _Conversation {
   @override
   final String? title;
   @override
-  final int createdBy;
+  final String createdBy;
   @override
   final DateTime createdAt;
   @override
@@ -346,7 +346,7 @@ abstract class _Conversation implements Conversation {
     required final int id,
     required final bool isGroup,
     final String? title,
-    required final int createdBy,
+    required final String createdBy,
     required final DateTime createdAt,
     final DateTime? lastMessageAt,
     final List<Participant> participants,
@@ -364,7 +364,7 @@ abstract class _Conversation implements Conversation {
   @override
   String? get title;
   @override
-  int get createdBy;
+  String get createdBy;
   @override
   DateTime get createdAt;
   @override
@@ -390,7 +390,7 @@ Participant _$ParticipantFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Participant {
-  int get userId => throw _privateConstructorUsedError;
+  String get userId => throw _privateConstructorUsedError;
   String? get role => throw _privateConstructorUsedError;
   DateTime get joinedAt => throw _privateConstructorUsedError;
   String? get userName => throw _privateConstructorUsedError;
@@ -414,7 +414,7 @@ abstract class $ParticipantCopyWith<$Res> {
   ) = _$ParticipantCopyWithImpl<$Res, Participant>;
   @useResult
   $Res call({
-    int userId,
+    String userId,
     String? role,
     DateTime joinedAt,
     String? userName,
@@ -448,7 +448,7 @@ class _$ParticipantCopyWithImpl<$Res, $Val extends Participant>
             userId: null == userId
                 ? _value.userId
                 : userId // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             role: freezed == role
                 ? _value.role
                 : role // ignore: cast_nullable_to_non_nullable
@@ -481,7 +481,7 @@ abstract class _$$ParticipantImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    int userId,
+    String userId,
     String? role,
     DateTime joinedAt,
     String? userName,
@@ -514,7 +514,7 @@ class __$$ParticipantImplCopyWithImpl<$Res>
         userId: null == userId
             ? _value.userId
             : userId // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         role: freezed == role
             ? _value.role
             : role // ignore: cast_nullable_to_non_nullable
@@ -551,7 +551,7 @@ class _$ParticipantImpl implements _Participant {
       _$$ParticipantImplFromJson(json);
 
   @override
-  final int userId;
+  final String userId;
   @override
   final String? role;
   @override
@@ -602,7 +602,7 @@ class _$ParticipantImpl implements _Participant {
 
 abstract class _Participant implements Participant {
   const factory _Participant({
-    required final int userId,
+    required final String userId,
     final String? role,
     required final DateTime joinedAt,
     final String? userName,
@@ -613,7 +613,7 @@ abstract class _Participant implements Participant {
       _$ParticipantImpl.fromJson;
 
   @override
-  int get userId;
+  String get userId;
   @override
   String? get role;
   @override

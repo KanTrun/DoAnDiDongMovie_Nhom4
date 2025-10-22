@@ -83,39 +83,32 @@ class LocalDbService {
   }
 
   // Conversation operations
-  Future<void> saveConversation(Conversation conversation) async {
+  Future<void> saveConversation(Conversation c) async {
     final db = await database;
-    await db.insert(
-      'conversations',
-      {
-        'id': conversation.id,
-        'is_group': conversation.isGroup ? 1 : 0,
-        'title': conversation.title,
-        'created_by': conversation.createdBy,
-        'created_at': conversation.createdAt.toIso8601String(),
-        'last_message_at': conversation.lastMessageAt?.toIso8601String(),
-        'unread_count': conversation.unreadCount,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('conversations', {
+      'id': c.id,
+      'is_group': c.isGroup ? 1 : 0,
+      'title': c.title,
+      'created_by': c.createdBy,
+      'created_at': c.createdAt.toUtc().toIso8601String(),
+      'last_message_at': c.lastMessageAt?.toUtc().toIso8601String(),
+      'unread_count': c.unreadCount,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Conversation>> getConversations() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'conversations',
-      orderBy: 'last_message_at DESC, created_at DESC',
-    );
-
-    return maps.map((map) => Conversation.fromJson({
-      'id': map['id'],
-      'isGroup': map['is_group'] == 1,
-      'title': map['title'],
-      'createdBy': map['created_by'],
-      'createdAt': map['created_at'],
-      'lastMessageAt': map['last_message_at'],
+    final maps = await db.query('conversations',
+        orderBy: 'COALESCE(last_message_at, created_at) DESC');
+    return maps.map((m) => Conversation.fromJson({
+      'id': m['id'],
+      'isGroup': m['is_group'] == 1,
+      'title': m['title'],
+      'createdBy': m['created_by'],
+      'createdAt': m['created_at'],
+      'lastMessageAt': m['last_message_at'],
       'participants': [],
-      'unreadCount': map['unread_count'] ?? 0,
+      'unreadCount': m['unread_count'] ?? 0,
     })).toList();
   }
 
@@ -142,14 +135,11 @@ class LocalDbService {
     });
   }
 
-  Future<void> updateConversationLastMessage(int conversationId, DateTime lastMessageAt) async {
+  Future<void> updateConversationLastMessage(int conversationId, DateTime at) async {
     final db = await database;
-    await db.update(
-      'conversations',
-      {'last_message_at': lastMessageAt.toIso8601String()},
-      where: 'id = ?',
-      whereArgs: [conversationId],
-    );
+    await db.update('conversations',
+        {'last_message_at': at.toUtc().toIso8601String()},
+        where: 'id = ?', whereArgs: [conversationId]);
   }
 
   Future<void> updateConversationUnreadCount(int conversationId, int unreadCount) async {
@@ -163,57 +153,51 @@ class LocalDbService {
   }
 
   // Message operations
-  Future<void> saveMessage(Message message) async {
+  Future<void> saveMessage(Message m) async {
     final db = await database;
-    await db.insert(
-      'messages',
-      {
-        'id': message.id,
-        'conversation_id': message.conversationId,
-        'sender_id': message.senderId,
-        'content': message.content,
-        'media_url': message.mediaUrl,
-        'media_type': message.mediaType,
-        'type': message.type,
-        'created_at': message.createdAt.toIso8601String(),
-        'edited_at': message.editedAt?.toIso8601String(),
-        'is_deleted': message.isDeleted ? 1 : 0,
-        'is_read': message.isRead ? 1 : 0,
-        'sender_name': message.senderName,
-        'sender_avatar': message.senderAvatar,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('messages', {
+      'id': m.id,
+      'conversation_id': m.conversationId,
+      'sender_id': m.senderId,
+      'content': m.content,
+      'media_url': m.mediaUrl,
+      'media_type': m.mediaType,
+      'type': m.type,
+      'created_at': m.createdAt.toUtc().toIso8601String(),
+      'edited_at': m.editedAt?.toUtc().toIso8601String(),
+      'is_deleted': m.isDeleted ? 1 : 0,
+      'is_read': m.isRead ? 1 : 0,
+      'sender_name': m.senderName,
+      'sender_avatar': m.senderAvatar,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
 
-    // Update conversation last message time
-    await updateConversationLastMessage(message.conversationId, message.createdAt);
+    await updateConversationLastMessage(m.conversationId, m.createdAt);
   }
 
   Future<List<Message>> getMessages(int conversationId, {int limit = 50, int offset = 0}) async {
+    print('DEBUG DB: Getting messages from local DB for conversation $conversationId');
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'messages',
-      where: 'conversation_id = ? AND is_deleted = 0',
-      whereArgs: [conversationId],
-      orderBy: 'created_at DESC',
-      limit: limit,
-      offset: offset,
-    );
+    final maps = await db.query('messages',
+        where: 'conversation_id = ? AND is_deleted = 0',
+        whereArgs: [conversationId],
+        orderBy: 'created_at ASC',
+        limit: limit, offset: offset);
 
-    return maps.map((map) => Message.fromJson({
-      'id': map['id'],
-      'conversationId': map['conversation_id'],
-      'senderId': map['sender_id'],
-      'content': map['content'],
-      'mediaUrl': map['media_url'],
-      'mediaType': map['media_type'],
-      'type': map['type'],
-      'createdAt': map['created_at'],
-      'editedAt': map['edited_at'],
-      'isDeleted': map['is_deleted'] == 1,
-      'isRead': map['is_read'] == 1,
-      'senderName': map['sender_name'],
-      'senderAvatar': map['sender_avatar'],
+    print('DEBUG DB: Found ${maps.length} local messages');
+    return maps.map((m) => Message.fromJson({
+      'id': m['id'],
+      'conversationId': m['conversation_id'],
+      'senderId': m['sender_id'],
+      'content': m['content'],
+      'mediaUrl': m['media_url'],
+      'mediaType': m['media_type'],
+      'type': m['type'],
+      'createdAt': m['created_at'],
+      'editedAt': m['edited_at'],
+      'isDeleted': m['is_deleted'] == 1,
+      'isRead': m['is_read'] == 1,
+      'senderName': m['sender_name'],
+      'senderAvatar': m['sender_avatar'],
       'reactions': [],
     })).toList();
   }

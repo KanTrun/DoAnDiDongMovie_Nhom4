@@ -90,16 +90,15 @@ builder.Services.AddCors(options =>
                 origin == "https://silvana-detainable-nongratifyingly.ngrok-free.dev")
                   .AllowAnyMethod()
                   .AllowAnyHeader()
-                  .AllowCredentials();
+                  .AllowCredentials()
+                  .SetIsOriginAllowedToAllowWildcardSubdomains();
         }
         else
         {
-            policy.WithOrigins(
-                    "https://silvana-detainable-nongratifyingly.ngrok-free.dev"
-                  )
+            // Production CORS policy
+            policy.AllowAnyOrigin()
                   .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
+                  .AllowAnyHeader();
         }
     });
 });

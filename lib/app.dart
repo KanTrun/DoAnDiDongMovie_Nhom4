@@ -9,7 +9,7 @@ import 'features/search/search_tab.dart';
 import 'features/favorites/favorites_tab.dart';
 import 'features/watchlist/watchlist_tab.dart';
 import 'features/community/community_tab.dart';
-import 'features/nearby_cinema/screens/nearby_cinema_screen.dart';
+import 'features/chat/screens/conversations_screen.dart';
 import 'features/profile/profile_tab.dart';
 import 'features/movie_detail/movie_detail_screen.dart';
 import 'features/movie_detail/tv_show_detail_screen.dart';
@@ -150,6 +150,11 @@ class _MoviePlusAppState extends ConsumerState<MoviePlusApp> {
               path: '/watchlist',
               name: 'watchlist',
               builder: (context, state) => const WatchlistTab(),
+            ),
+            GoRoute(
+              path: '/chat',
+              name: 'chat',
+              builder: (context, state) => const ConversationsScreen(),
             ),
             GoRoute(
               path: '/community',

@@ -16,24 +16,32 @@ namespace MoviePlusApi.Services.Chat
 
         public async Task<ConversationDto> Create1To1ConversationAsync(Guid userA, Guid userB)
         {
-            // Check if conversation already exists
-            var existingConversation = await _context.Conversations
-                .Where(c => c.IsGroup == false)
-                .Where(c => c.Participants.Any(p => p.UserId == userA))
-                .Where(c => c.Participants.Any(p => p.UserId == userB))
+            // Check if conversation already exists by checking participants
+            var existingConversationId = await _context.ConversationParticipants
+                .Where(cp => cp.UserId == userA)
+                .Where(cp => _context.ConversationParticipants.Any(cp2 => cp2.UserId == userB && cp2.ConversationId == cp.ConversationId))
+                .Where(cp => _context.Conversations.Any(c => c.Id == cp.ConversationId && c.IsGroup == false))
+                .Select(cp => cp.ConversationId)
                 .FirstOrDefaultAsync();
 
-            if (existingConversation != null)
+            if (existingConversationId > 0)
             {
-                return new ConversationDto
+                var existingConversation = await _context.Conversations
+                    .Where(c => c.Id == existingConversationId)
+                    .FirstOrDefaultAsync();
+
+                if (existingConversation != null)
                 {
-                    Id = existingConversation.Id,
-                    IsGroup = existingConversation.IsGroup,
-                    Title = existingConversation.Title,
-                    CreatedBy = existingConversation.CreatedBy,
-                    CreatedAt = existingConversation.CreatedAt,
-                    LastMessageAt = existingConversation.LastMessageAt
-                };
+                    return new ConversationDto
+                    {
+                        Id = existingConversation.Id,
+                        IsGroup = existingConversation.IsGroup,
+                        Title = existingConversation.Title,
+                        CreatedBy = existingConversation.CreatedBy,
+                        CreatedAt = existingConversation.CreatedAt,
+                        LastMessageAt = existingConversation.LastMessageAt
+                    };
+                }
             }
 
             // Create new conversation
@@ -118,28 +126,69 @@ namespace MoviePlusApi.Services.Chat
 
         public async Task<ConversationDto[]> GetConversationsForUserAsync(Guid userId)
         {
+            // Get conversation IDs where user is a participant
+            var participantConversationIds = await _context.ConversationParticipants
+                .Where(cp => cp.UserId == userId)
+                .Select(cp => cp.ConversationId)
+                .ToListAsync();
+
+            // Get conversations created by user
+            var createdConversationIds = await _context.Conversations
+                .Where(c => c.CreatedBy == userId)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            // Combine both lists
+            var allConversationIds = participantConversationIds.Union(createdConversationIds).ToList();
+
+            Console.WriteLine($"DEBUG: Found {participantConversationIds.Count} participant conversations for user {userId}");
+            Console.WriteLine($"DEBUG: Found {createdConversationIds.Count} created conversations for user {userId}");
+            Console.WriteLine($"DEBUG: Total conversation IDs: {string.Join(", ", allConversationIds)}");
+
+            // Get conversations by IDs with participants
             var conversations = await _context.Conversations
-                .Where(c => c.Participants.Any(p => p.UserId == userId))
+                .Where(c => allConversationIds.Contains(c.Id))
+                .Include(c => c.Participants)
+                .ThenInclude(p => p.User)
                 .OrderByDescending(c => c.LastMessageAt ?? c.CreatedAt)
-                .Select(c => new ConversationDto
-                {
-                    Id = c.Id,
-                    IsGroup = c.IsGroup,
-                    Title = c.Title,
-                    CreatedBy = c.CreatedBy,
-                    CreatedAt = c.CreatedAt,
-                    LastMessageAt = c.LastMessageAt
-                })
                 .ToArrayAsync();
 
-            return conversations;
+            Console.WriteLine($"DEBUG: Loaded {conversations.Length} conversations from database");
+            foreach (var conv in conversations)
+            {
+                Console.WriteLine($"DEBUG: Conversation {conv.Id}: IsGroup={conv.IsGroup}, Title='{conv.Title}', Participants={conv.Participants.Count}");
+            }
+
+            return conversations.Select(c => new ConversationDto
+            {
+                Id = c.Id,
+                IsGroup = c.IsGroup,
+                Title = c.Title,
+                CreatedBy = c.CreatedBy,
+                CreatedAt = c.CreatedAt,
+                LastMessageAt = c.LastMessageAt,
+                Participants = c.Participants.Select(p => new ParticipantDto
+                {
+                    UserId = p.UserId,
+                    Role = p.Role,
+                    JoinedAt = p.JoinedAt,
+                    UserName = p.User?.DisplayName ?? p.User?.Email,
+                    UserAvatar = null // User model doesn't have Avatar
+                }).ToList()
+            }).ToArray();
         }
 
         public async Task<ConversationDto?> GetConversationByIdAsync(int conversationId, Guid userId)
         {
+            // Check if user is participant first
+            var isParticipant = await _context.ConversationParticipants
+                .AnyAsync(cp => cp.ConversationId == conversationId && cp.UserId == userId);
+
+            if (!isParticipant)
+                return null;
+
             var conversation = await _context.Conversations
                 .Where(c => c.Id == conversationId)
-                .Where(c => c.Participants.Any(p => p.UserId == userId))
                 .Select(c => new ConversationDto
                 {
                     Id = c.Id,
@@ -176,8 +225,23 @@ namespace MoviePlusApi.Services.Chat
 
         public async Task<bool> IsParticipantAsync(int conversationId, Guid userId)
         {
-            return await _context.ConversationParticipants
+            Console.WriteLine($"DEBUG: Checking if user {userId} is participant of conversation {conversationId}");
+            
+            // Check if user is a participant
+            var isParticipant = await _context.ConversationParticipants
                 .AnyAsync(cp => cp.ConversationId == conversationId && cp.UserId == userId);
+            
+            Console.WriteLine($"DEBUG: Is participant: {isParticipant}");
+            
+            if (isParticipant) return true;
+            
+            // Check if user is the creator of the conversation
+            var isCreator = await _context.Conversations
+                .AnyAsync(c => c.Id == conversationId && c.CreatedBy == userId);
+            
+            Console.WriteLine($"DEBUG: Is creator: {isCreator}");
+            
+            return isCreator;
         }
 
         public async Task<int[]> GetConversationIdsForUserAsync(Guid userId)

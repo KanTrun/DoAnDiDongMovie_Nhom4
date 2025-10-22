@@ -6,11 +6,11 @@ part 'contact.g.dart';
 @freezed
 class Contact with _$Contact {
   const factory Contact({
-    required int id,
+    required String id,
     required String userName,
     required String email,
     String? avatar,
-    @Default(false) bool isOnline,
+    required bool isOnline,
   }) = _Contact;
 
   factory Contact.fromJson(Map<String, dynamic> json) =>

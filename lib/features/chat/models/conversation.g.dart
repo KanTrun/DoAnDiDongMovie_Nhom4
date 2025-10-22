@@ -11,7 +11,7 @@ _$ConversationImpl _$$ConversationImplFromJson(Map<String, dynamic> json) =>
       id: (json['id'] as num).toInt(),
       isGroup: json['isGroup'] as bool,
       title: json['title'] as String?,
-      createdBy: (json['createdBy'] as num).toInt(),
+      createdBy: json['createdBy'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastMessageAt: json['lastMessageAt'] == null
           ? null
@@ -42,7 +42,7 @@ Map<String, dynamic> _$$ConversationImplToJson(_$ConversationImpl instance) =>
 
 _$ParticipantImpl _$$ParticipantImplFromJson(Map<String, dynamic> json) =>
     _$ParticipantImpl(
-      userId: (json['userId'] as num).toInt(),
+      userId: json['userId'] as String,
       role: json['role'] as String?,
       joinedAt: DateTime.parse(json['joinedAt'] as String),
       userName: json['userName'] as String?,

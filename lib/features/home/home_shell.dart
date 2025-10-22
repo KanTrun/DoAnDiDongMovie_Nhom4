@@ -26,10 +26,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         return 2;
       case '/watchlist':
         return 3;
-      case '/community':
+      case '/chat':
         return 4;
-      case '/profile':
+      case '/community':
         return 5;
+      case '/profile':
+        return 6;
       default:
         return 0;
     }
@@ -80,9 +82,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                 context.go('/watchlist');
                 break;
               case 4:
-                context.go('/community');
+                context.go('/chat');
                 break;
               case 5:
+                context.go('/community');
+                break;
+              case 6:
                 context.go('/profile');
                 break;
             }
@@ -118,6 +123,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               icon: Icon(Icons.bookmark_outline),
               activeIcon: Icon(Icons.bookmark),
               label: 'Danh sách',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_outlined),
+              activeIcon: Icon(Icons.chat),
+              label: 'Tin nhắn',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.people_outline),

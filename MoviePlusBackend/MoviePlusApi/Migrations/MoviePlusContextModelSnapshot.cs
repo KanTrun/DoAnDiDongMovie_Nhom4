@@ -52,7 +52,7 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Conversations");
+                    b.ToTable("Conversations", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.ConversationParticipant", b =>
@@ -78,7 +78,7 @@ namespace MoviePlusApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ConversationParticipants");
+                    b.ToTable("ConversationParticipants", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.DeviceToken", b =>
@@ -114,7 +114,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_DeviceTokens_UserId");
 
-                    b.ToTable("DeviceTokens");
+                    b.ToTable("DeviceTokens", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.Message", b =>
@@ -169,7 +169,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("ConversationId", "CreatedAt")
                         .HasDatabaseName("IX_Messages_ConversationId_CreatedAt");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.MessageReaction", b =>
@@ -196,7 +196,7 @@ namespace MoviePlusApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("MessageReactions");
+                    b.ToTable("MessageReactions", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.MessageReadReceipt", b =>
@@ -218,7 +218,7 @@ namespace MoviePlusApi.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("MessageReadReceipts");
+                    b.ToTable("MessageReadReceipts", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.UserConnection", b =>
@@ -249,7 +249,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_UserConnections_UserId");
 
-                    b.ToTable("UserConnections");
+                    b.ToTable("UserConnections", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.CommentReaction", b =>
@@ -284,7 +284,7 @@ namespace MoviePlusApi.Migrations
                         .IsUnique()
                         .HasDatabaseName("UQ_CommentReactions");
 
-                    b.ToTable("CommentReactions", t =>
+                    b.ToTable("CommentReactions", null, t =>
                         {
                             t.HasCheckConstraint("CK_CommentReaction_Type", "Type = 1");
                         });
@@ -319,7 +319,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("UserId", "TmdbId", "MediaType")
                         .IsUnique();
 
-                    b.ToTable("Favorites", t =>
+                    b.ToTable("Favorites", null, t =>
                         {
                             t.HasCheckConstraint("CK_Fav_Media", "MediaType IN ('movie','tv')");
                         });
@@ -365,7 +365,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("TmdbId", "MediaType", "Action", "WatchedAt")
                         .HasDatabaseName("IX_Histories_Tmdb_Action");
 
-                    b.ToTable("Histories", t =>
+                    b.ToTable("Histories", null, t =>
                         {
                             t.HasCheckConstraint("CK_Histories_Action", "Action IN ('TrailerView','DetailOpen','ProviderClick','NoteCreated','RatingGiven','FavoriteAdded','FavoriteRemoved','WatchlistAdded','WatchlistRemoved','ShareClick')");
 
@@ -411,7 +411,7 @@ namespace MoviePlusApi.Migrations
 
                     b.HasIndex("UserId", "TmdbId", "MediaType");
 
-                    b.ToTable("Notes", t =>
+                    b.ToTable("Notes", null, t =>
                         {
                             t.HasCheckConstraint("CK_Notes_Media", "MediaType IN ('movie','tv')");
                         });
@@ -454,7 +454,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("UserId", "IsRead", "CreatedAt")
                         .HasDatabaseName("IX_Notifications_User");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Post", b =>
@@ -521,7 +521,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("TmdbId", "MediaType", "Visibility", "CreatedAt")
                         .HasDatabaseName("IX_Posts_ByMovie");
 
-                    b.ToTable("Posts", t =>
+                    b.ToTable("Posts", null, t =>
                         {
                             t.HasCheckConstraint("CK_Post_Media", "MediaType IN ('movie','tv') OR MediaType IS NULL");
 
@@ -573,7 +573,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("UserId", "CreatedAt")
                         .HasDatabaseName("IX_PostComments_User");
 
-                    b.ToTable("PostComments");
+                    b.ToTable("PostComments", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.PostReaction", b =>
@@ -608,7 +608,7 @@ namespace MoviePlusApi.Migrations
                         .IsUnique()
                         .HasDatabaseName("UQ_PostReactions");
 
-                    b.ToTable("PostReactions", t =>
+                    b.ToTable("PostReactions", null, t =>
                         {
                             t.HasCheckConstraint("CK_PostReaction_Type", "Type = 1");
                         });
@@ -649,7 +649,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("UserId", "TmdbId", "MediaType")
                         .IsUnique();
 
-                    b.ToTable("Ratings", t =>
+                    b.ToTable("Ratings", null, t =>
                         {
                             t.HasCheckConstraint("CK_Rate_Media", "MediaType IN ('movie','tv')");
 
@@ -713,7 +713,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", t =>
+                    b.ToTable("Users", null, t =>
                         {
                             t.HasCheckConstraint("CK_User_Role", "Role IN ('Admin','User')");
                         });
@@ -746,7 +746,7 @@ namespace MoviePlusApi.Migrations
                         .IsUnique()
                         .HasDatabaseName("UQ_UserFollows");
 
-                    b.ToTable("UserFollows");
+                    b.ToTable("UserFollows", (string)null);
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Watchlist", b =>
@@ -782,7 +782,7 @@ namespace MoviePlusApi.Migrations
                     b.HasIndex("UserId", "TmdbId", "MediaType")
                         .IsUnique();
 
-                    b.ToTable("Watchlists", t =>
+                    b.ToTable("Watchlists", null, t =>
                         {
                             t.HasCheckConstraint("CK_Watch_Media", "MediaType IN ('movie','tv')");
                         });

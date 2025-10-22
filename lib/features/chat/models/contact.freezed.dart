@@ -21,7 +21,7 @@ Contact _$ContactFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Contact {
-  int get id => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
   String get userName => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
   String? get avatar => throw _privateConstructorUsedError;
@@ -42,7 +42,7 @@ abstract class $ContactCopyWith<$Res> {
       _$ContactCopyWithImpl<$Res, Contact>;
   @useResult
   $Res call({
-    int id,
+    String id,
     String userName,
     String email,
     String? avatar,
@@ -76,7 +76,7 @@ class _$ContactCopyWithImpl<$Res, $Val extends Contact>
             id: null == id
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             userName: null == userName
                 ? _value.userName
                 : userName // ignore: cast_nullable_to_non_nullable
@@ -108,7 +108,7 @@ abstract class _$$ContactImplCopyWith<$Res> implements $ContactCopyWith<$Res> {
   @override
   @useResult
   $Res call({
-    int id,
+    String id,
     String userName,
     String email,
     String? avatar,
@@ -141,7 +141,7 @@ class __$$ContactImplCopyWithImpl<$Res>
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         userName: null == userName
             ? _value.userName
             : userName // ignore: cast_nullable_to_non_nullable
@@ -171,14 +171,14 @@ class _$ContactImpl implements _Contact {
     required this.userName,
     required this.email,
     this.avatar,
-    this.isOnline = false,
+    required this.isOnline,
   });
 
   factory _$ContactImpl.fromJson(Map<String, dynamic> json) =>
       _$$ContactImplFromJson(json);
 
   @override
-  final int id;
+  final String id;
   @override
   final String userName;
   @override
@@ -186,7 +186,6 @@ class _$ContactImpl implements _Contact {
   @override
   final String? avatar;
   @override
-  @JsonKey()
   final bool isOnline;
 
   @override
@@ -229,17 +228,17 @@ class _$ContactImpl implements _Contact {
 
 abstract class _Contact implements Contact {
   const factory _Contact({
-    required final int id,
+    required final String id,
     required final String userName,
     required final String email,
     final String? avatar,
-    final bool isOnline,
+    required final bool isOnline,
   }) = _$ContactImpl;
 
   factory _Contact.fromJson(Map<String, dynamic> json) = _$ContactImpl.fromJson;
 
   @override
-  int get id;
+  String get id;
   @override
   String get userName;
   @override

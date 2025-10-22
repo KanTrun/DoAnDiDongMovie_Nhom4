@@ -8,7 +8,7 @@ class Message with _$Message {
   const factory Message({
     required int id,
     required int conversationId,
-    required int senderId,
+    required String senderId,
     String? content,
     String? mediaUrl,
     String? mediaType,
@@ -43,7 +43,7 @@ class CreateMessage with _$CreateMessage {
 class MessageReaction with _$MessageReaction {
   const factory MessageReaction({
     required String reaction,
-    required int userId,
+    required String userId,
     String? userName,
     required DateTime createdAt,
   }) = _MessageReaction;

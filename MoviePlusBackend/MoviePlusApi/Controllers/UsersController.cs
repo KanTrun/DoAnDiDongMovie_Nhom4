@@ -62,7 +62,10 @@ namespace MoviePlusApi.Controllers
         private Guid GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return Guid.Parse(userIdClaim!);
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+                throw new UnauthorizedAccessException("Invalid user ID");
+            
+            return userId;
         }
     }
 }

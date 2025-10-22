@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MoviePlusApi.Services.Chat;
 using MoviePlusApi.DTOs.Chat;
+using System.Security.Claims;
 
 namespace MoviePlusApi.Controllers
 {
@@ -112,8 +113,8 @@ namespace MoviePlusApi.Controllers
 
         private Guid GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst("id") ?? User.FindFirst("sub");
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
                 throw new UnauthorizedAccessException("Invalid user ID");
             
             return userId;

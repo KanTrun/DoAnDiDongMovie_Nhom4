@@ -10,7 +10,7 @@ _$MessageImpl _$$MessageImplFromJson(Map<String, dynamic> json) =>
     _$MessageImpl(
       id: (json['id'] as num).toInt(),
       conversationId: (json['conversationId'] as num).toInt(),
-      senderId: (json['senderId'] as num).toInt(),
+      senderId: json['senderId'] as String,
       content: json['content'] as String?,
       mediaUrl: json['mediaUrl'] as String?,
       mediaType: json['mediaType'] as String?,
@@ -68,7 +68,7 @@ _$MessageReactionImpl _$$MessageReactionImplFromJson(
   Map<String, dynamic> json,
 ) => _$MessageReactionImpl(
   reaction: json['reaction'] as String,
-  userId: (json['userId'] as num).toInt(),
+  userId: json['userId'] as String,
   userName: json['userName'] as String?,
   createdAt: DateTime.parse(json['createdAt'] as String),
 );

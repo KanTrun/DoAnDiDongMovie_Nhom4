@@ -18,10 +18,8 @@ class ChatApiService {
   }
 
   Future<void> _setAuthHeader() async {
-    final token = await _storage.read(key: 'auth_token');
-    if (token != null) {
-      _dio.options.headers['Authorization'] = 'Bearer $token';
-    }
+    String? token = await _storage.read(key: 'auth_token') ?? await _storage.read(key: 'jwt_token');
+    if (token != null) _dio.options.headers['Authorization'] = 'Bearer $token';
   }
 
   Future<T> _handleRequest<T>(Future<T> Function() request) async {
@@ -46,12 +44,12 @@ class ChatApiService {
 
   // Conversations
   Future<List<Conversation>> getConversations() async {
-    return await _handleRequest(() async {
+    return _handleRequest(() async {
       await _setAuthHeader();
-      final response = await _dio.get('/conversations');
-      return (response.data as List)
-          .map((json) => Conversation.fromJson(json))
-          .toList();
+      final res = await _dio.get('/conversations');
+      final list = (res.data as List).map((j) => Conversation.fromJson(j)).toList();
+      // chuẩn hoá timezone: mọi DateTime coi như UTC và lưu nguyên bản
+      return list;
     });
   }
 
@@ -66,7 +64,7 @@ class ChatApiService {
   Future<Conversation> createConversation({
     required bool isGroup,
     String? title,
-    required List<int> participantIds,
+    required List<String> participantIds,
   }) async {
     return await _handleRequest(() async {
       await _setAuthHeader();
@@ -104,23 +102,28 @@ class ChatApiService {
 
   // Messages
   Future<List<Message>> getMessages(int conversationId, {int page = 1, int pageSize = 50}) async {
-    return await _handleRequest(() async {
+    print('DEBUG API: Getting messages for conversation $conversationId');
+    return _handleRequest(() async {
       await _setAuthHeader();
-      final response = await _dio.get('/conversations/$conversationId/messages', queryParameters: {
+      print('DEBUG API: Making request to /conversations/$conversationId/messages');
+      final res = await _dio.get('/conversations/$conversationId/messages', queryParameters: {
         'page': page,
         'pageSize': pageSize,
       });
-      return (response.data as List)
-          .map((json) => Message.fromJson(json))
-          .toList();
+      print('DEBUG API: Response received, status: ${res.statusCode}');
+      final list = (res.data as List).map((j) => Message.fromJson(j)).toList();
+      print('DEBUG API: Parsed ${list.length} messages');
+      // sort ASC để UI hiển thị từ cũ → mới
+      list.sort((a,b) => a.createdAt.compareTo(b.createdAt));
+      return list;
     });
   }
 
-  Future<Message> sendMessage(int conversationId, CreateMessage message) async {
-    return await _handleRequest(() async {
+  Future<Message> sendMessage(int conversationId, CreateMessage data) async {
+    return _handleRequest(() async {
       await _setAuthHeader();
-      final response = await _dio.post('/conversations/$conversationId/messages', data: message.toJson());
-      return Message.fromJson(response.data);
+      final res = await _dio.post('/conversations/$conversationId/messages', data: data.toJson());
+      return Message.fromJson(res.data);
     });
   }
 
@@ -205,4 +208,5 @@ class ChatApiService {
       await _dio.delete('/devicetokens/$deviceToken');
     });
   }
+
 }

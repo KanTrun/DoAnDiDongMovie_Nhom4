@@ -23,7 +23,7 @@ Message _$MessageFromJson(Map<String, dynamic> json) {
 mixin _$Message {
   int get id => throw _privateConstructorUsedError;
   int get conversationId => throw _privateConstructorUsedError;
-  int get senderId => throw _privateConstructorUsedError;
+  String get senderId => throw _privateConstructorUsedError;
   String? get content => throw _privateConstructorUsedError;
   String? get mediaUrl => throw _privateConstructorUsedError;
   String? get mediaType => throw _privateConstructorUsedError;
@@ -53,7 +53,7 @@ abstract class $MessageCopyWith<$Res> {
   $Res call({
     int id,
     int conversationId,
-    int senderId,
+    String senderId,
     String? content,
     String? mediaUrl,
     String? mediaType,
@@ -111,7 +111,7 @@ class _$MessageCopyWithImpl<$Res, $Val extends Message>
             senderId: null == senderId
                 ? _value.senderId
                 : senderId // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             content: freezed == content
                 ? _value.content
                 : content // ignore: cast_nullable_to_non_nullable
@@ -173,7 +173,7 @@ abstract class _$$MessageImplCopyWith<$Res> implements $MessageCopyWith<$Res> {
   $Res call({
     int id,
     int conversationId,
-    int senderId,
+    String senderId,
     String? content,
     String? mediaUrl,
     String? mediaType,
@@ -230,7 +230,7 @@ class __$$MessageImplCopyWithImpl<$Res>
         senderId: null == senderId
             ? _value.senderId
             : senderId // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         content: freezed == content
             ? _value.content
             : content // ignore: cast_nullable_to_non_nullable
@@ -308,7 +308,7 @@ class _$MessageImpl implements _Message {
   @override
   final int conversationId;
   @override
-  final int senderId;
+  final String senderId;
   @override
   final String? content;
   @override
@@ -417,7 +417,7 @@ abstract class _Message implements Message {
   const factory _Message({
     required final int id,
     required final int conversationId,
-    required final int senderId,
+    required final String senderId,
     final String? content,
     final String? mediaUrl,
     final String? mediaType,
@@ -438,7 +438,7 @@ abstract class _Message implements Message {
   @override
   int get conversationId;
   @override
-  int get senderId;
+  String get senderId;
   @override
   String? get content;
   @override
@@ -704,7 +704,7 @@ MessageReaction _$MessageReactionFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$MessageReaction {
   String get reaction => throw _privateConstructorUsedError;
-  int get userId => throw _privateConstructorUsedError;
+  String get userId => throw _privateConstructorUsedError;
   String? get userName => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
 
@@ -727,7 +727,7 @@ abstract class $MessageReactionCopyWith<$Res> {
   @useResult
   $Res call({
     String reaction,
-    int userId,
+    String userId,
     String? userName,
     DateTime createdAt,
   });
@@ -762,7 +762,7 @@ class _$MessageReactionCopyWithImpl<$Res, $Val extends MessageReaction>
             userId: null == userId
                 ? _value.userId
                 : userId // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             userName: freezed == userName
                 ? _value.userName
                 : userName // ignore: cast_nullable_to_non_nullable
@@ -788,7 +788,7 @@ abstract class _$$MessageReactionImplCopyWith<$Res>
   @useResult
   $Res call({
     String reaction,
-    int userId,
+    String userId,
     String? userName,
     DateTime createdAt,
   });
@@ -822,7 +822,7 @@ class __$$MessageReactionImplCopyWithImpl<$Res>
         userId: null == userId
             ? _value.userId
             : userId // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         userName: freezed == userName
             ? _value.userName
             : userName // ignore: cast_nullable_to_non_nullable
@@ -852,7 +852,7 @@ class _$MessageReactionImpl implements _MessageReaction {
   @override
   final String reaction;
   @override
-  final int userId;
+  final String userId;
   @override
   final String? userName;
   @override
@@ -902,7 +902,7 @@ class _$MessageReactionImpl implements _MessageReaction {
 abstract class _MessageReaction implements MessageReaction {
   const factory _MessageReaction({
     required final String reaction,
-    required final int userId,
+    required final String userId,
     final String? userName,
     required final DateTime createdAt,
   }) = _$MessageReactionImpl;
@@ -913,7 +913,7 @@ abstract class _MessageReaction implements MessageReaction {
   @override
   String get reaction;
   @override
-  int get userId;
+  String get userId;
   @override
   String? get userName;
   @override
