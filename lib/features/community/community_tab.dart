@@ -43,13 +43,15 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
     }
   }
 
-  void _loadFeed() {
+  Future<void> _loadFeed() async {
+    print('DEBUG: _loadFeed called');
     final filter = PostFeedFilter(
       filter: _currentFilter,
       tmdbId: _tmdbId,
       mediaType: _mediaType,
     );
-    ref.read(postsProvider.notifier).loadFeed(filter: filter);
+    await ref.read(postsProvider.notifier).loadFeed(filter: filter);
+    print('DEBUG: _loadFeed completed');
   }
 
   void _loadMorePosts() {
@@ -72,15 +74,22 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
   }
 
   void _handleLike(PostListItem post) async {
+    print('DEBUG: _handleLike called for post ${post.id}');
     try {
       if (post.isLikedByCurrentUser) {
+        print('DEBUG: Unlike post ${post.id}');
         await ref.read(reactionsProvider.notifier).unlikePost(post.id);
       } else {
+        print('DEBUG: Like post ${post.id}');
         await ref.read(reactionsProvider.notifier).likePost(post.id);
       }
       // Refresh feed to update like counts
-      _loadFeed();
+      await _loadFeed();
+      // Force refresh posts provider
+      ref.invalidate(postsProvider);
+      print('DEBUG: Like action completed successfully');
     } catch (e) {
+      print('DEBUG: Like error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -112,12 +121,15 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
   }
 
   void _handleFollow(String userId) async {
+    print('DEBUG: _handleFollow called for user $userId');
     try {
       // Get current follow status
       final currentStatus = await ref.read(followStatusProvider(userId).future);
+      print('DEBUG: Current follow status: $currentStatus');
       
       if (currentStatus) {
         // Currently following, so unfollow
+        print('DEBUG: Unfollow user $userId');
         await ref.read(followsProvider.notifier).unfollowUser(userId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -127,6 +139,7 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
         );
       } else {
         // Not following, so follow
+        print('DEBUG: Follow user $userId');
         await ref.read(followsProvider.notifier).followUser(userId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -139,13 +152,16 @@ class _CommunityTabState extends ConsumerState<CommunityTab> {
       // Force refresh UI by invalidating the provider
       ref.invalidate(followStatusProvider(userId));
       ref.invalidate(followStatsProvider);
+      ref.invalidate(postsProvider);
       
       // Force rebuild the widget
       if (mounted) {
         setState(() {});
       }
       
+      print('DEBUG: Follow action completed successfully');
     } catch (e) {
+      print('DEBUG: Follow error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

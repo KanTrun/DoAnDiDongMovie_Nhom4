@@ -6,8 +6,11 @@ class ReactionsService {
   // Like post
   static Future<void> likePost(String token, int postId) async {
     try {
-      await ApiClient.backend(token: token).post('/api/reactions/posts/$postId/like');
+      print('DEBUG: Calling likePost API for post $postId');
+      final response = await ApiClient.backend(token: token).post('/api/reactions/posts/$postId/like');
+      print('DEBUG: LikePost API response: ${response.statusCode}');
     } on DioException catch (e) {
+      print('DEBUG: LikePost API error: ${e.response?.statusCode} - ${e.response?.data}');
       throw _handleError(e);
     }
   }
@@ -82,8 +85,13 @@ class ReactionsService {
   }
 
   static String _handleError(DioException e) {
-    if (e.response?.data != null && e.response?.data['message'] != null) {
-      return e.response!.data['message'];
+    if (e.response?.data != null) {
+      final data = e.response!.data;
+      if (data is Map<String, dynamic> && data['message'] != null) {
+        return data['message'].toString();
+      } else if (data is String) {
+        return data;
+      }
     }
     switch (e.type) {
       case DioExceptionType.connectionTimeout:

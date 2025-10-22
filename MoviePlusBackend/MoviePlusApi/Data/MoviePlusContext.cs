@@ -133,7 +133,7 @@ namespace MoviePlusApi.Data
             // PostReaction configuration
             modelBuilder.Entity<PostReaction>(entity =>
             {
-                entity.HasKey(e => new { e.PostId, e.UserId });
+                entity.HasKey(e => e.Id);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
                 
                 entity.HasOne(e => e.Post)
@@ -145,6 +145,9 @@ namespace MoviePlusApi.Data
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.NoAction);
+                    
+                // Add unique index to prevent duplicate reactions
+                entity.HasIndex(e => new { e.PostId, e.UserId }).IsUnique();
             });
 
             // PostComment configuration
@@ -281,6 +284,11 @@ namespace MoviePlusApi.Data
                     .WithMany(m => m.ReadReceipts)
                     .HasForeignKey(e => e.MessageId)
                     .OnDelete(DeleteBehavior.Cascade);
+                    
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // MessageReaction configuration
@@ -294,6 +302,11 @@ namespace MoviePlusApi.Data
                     .WithMany(m => m.Reactions)
                     .HasForeignKey(e => e.MessageId)
                     .OnDelete(DeleteBehavior.Cascade);
+                    
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // UserConnection configuration

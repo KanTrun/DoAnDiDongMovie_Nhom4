@@ -347,7 +347,10 @@ class ReactionsNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> 
         updatedData['post_$postId'] = true;
         state = AsyncValue.data(updatedData);
       });
+      
+      print('DEBUG: Like post $postId successful');
     } catch (e, stack) {
+      print('DEBUG: Like post $postId error: $e');
       state = AsyncValue.error(e, stack);
     }
   }

@@ -12,7 +12,7 @@ using MoviePlusApi.Data;
 namespace MoviePlusApi.Migrations
 {
     [DbContext(typeof(MoviePlusContext))]
-    [Migration("20251022082917_InitialCreate")]
+    [Migration("20251022173507_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -111,11 +111,7 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Token")
-                        .HasDatabaseName("IX_DeviceTokens_Token");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("IX_DeviceTokens_UserId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("DeviceTokens");
                 });
@@ -249,8 +245,7 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("ConnectionId");
 
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("IX_UserConnections_UserId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserConnections");
                 });
@@ -272,25 +267,23 @@ namespace MoviePlusApi.Migrations
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<byte>("Type")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint")
-                        .HasDefaultValue((byte)1);
+                        .HasColumnType("tinyint");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("CommentId", "UserId", "Type")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_CommentReactions");
+                    b.HasIndex("UserId1");
 
-                    b.ToTable("CommentReactions", t =>
-                        {
-                            t.HasCheckConstraint("CK_CommentReaction_Type", "Type = 1");
-                        });
+                    b.ToTable("CommentReactions");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Favorite", b =>
@@ -319,13 +312,9 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "TmdbId", "MediaType")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
-                    b.ToTable("Favorites", t =>
-                        {
-                            t.HasCheckConstraint("CK_Fav_Media", "MediaType IN ('movie','tv')");
-                        });
+                    b.ToTable("Favorites");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.History", b =>
@@ -362,18 +351,9 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "WatchedAt")
-                        .HasDatabaseName("IX_Histories_User_Time");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("TmdbId", "MediaType", "Action", "WatchedAt")
-                        .HasDatabaseName("IX_Histories_Tmdb_Action");
-
-                    b.ToTable("Histories", t =>
-                        {
-                            t.HasCheckConstraint("CK_Histories_Action", "Action IN ('TrailerView','DetailOpen','ProviderClick','NoteCreated','RatingGiven','FavoriteAdded','FavoriteRemoved','WatchlistAdded','WatchlistRemoved','ShareClick')");
-
-                            t.HasCheckConstraint("CK_Histories_Media", "MediaType IN ('movie','tv')");
-                        });
+                    b.ToTable("Histories");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Note", b =>
@@ -409,15 +389,9 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "CreatedAt")
-                        .HasDatabaseName("IX_Notes_UserId_CreatedAt");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "TmdbId", "MediaType");
-
-                    b.ToTable("Notes", t =>
-                        {
-                            t.HasCheckConstraint("CK_Notes_Media", "MediaType IN ('movie','tv')");
-                        });
+                    b.ToTable("Notes");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Notification", b =>
@@ -469,9 +443,7 @@ namespace MoviePlusApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<int>("CommentCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasColumnType("int");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -483,9 +455,7 @@ namespace MoviePlusApi.Migrations
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<int>("LikeCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasColumnType("int");
 
                     b.Property<string>("MediaType")
                         .HasMaxLength(20)
@@ -509,27 +479,13 @@ namespace MoviePlusApi.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<byte>("Visibility")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint")
-                        .HasDefaultValue((byte)1);
+                        .HasColumnType("tinyint");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "CreatedAt")
-                        .HasDatabaseName("IX_Posts_ByUser");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("Visibility", "CreatedAt")
-                        .HasDatabaseName("IX_Posts_Public_Feed");
-
-                    b.HasIndex("TmdbId", "MediaType", "Visibility", "CreatedAt")
-                        .HasDatabaseName("IX_Posts_ByMovie");
-
-                    b.ToTable("Posts", t =>
-                        {
-                            t.HasCheckConstraint("CK_Post_Media", "MediaType IN ('movie','tv') OR MediaType IS NULL");
-
-                            t.HasCheckConstraint("CK_Post_Visibility", "Visibility IN (0,1,2)");
-                        });
+                    b.ToTable("Posts");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.PostComment", b =>
@@ -550,9 +506,7 @@ namespace MoviePlusApi.Migrations
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<int>("LikeCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
+                        .HasColumnType("int");
 
                     b.Property<long?>("ParentCommentId")
                         .HasColumnType("bigint");
@@ -566,15 +520,18 @@ namespace MoviePlusApi.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ParentCommentId");
 
-                    b.HasIndex("PostId", "CreatedAt")
-                        .HasDatabaseName("IX_PostComments_Post");
+                    b.HasIndex("PostId");
 
-                    b.HasIndex("UserId", "CreatedAt")
-                        .HasDatabaseName("IX_PostComments_User");
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("PostComments");
                 });
@@ -596,25 +553,24 @@ namespace MoviePlusApi.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<byte>("Type")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint")
-                        .HasDefaultValue((byte)1);
+                        .HasColumnType("tinyint");
 
                     b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserId1")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("PostId", "UserId", "Type")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_PostReactions");
+                    b.HasIndex("UserId1");
 
-                    b.ToTable("PostReactions", t =>
-                        {
-                            t.HasCheckConstraint("CK_PostReaction_Type", "Type = 1");
-                        });
+                    b.HasIndex("PostId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("PostReactions");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Rating", b =>
@@ -649,15 +605,9 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "TmdbId", "MediaType")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
-                    b.ToTable("Ratings", t =>
-                        {
-                            t.HasCheckConstraint("CK_Rate_Media", "MediaType IN ('movie','tv')");
-
-                            t.HasCheckConstraint("CK_Rate_Score", "Score BETWEEN 1.0 AND 10.0");
-                        });
+                    b.ToTable("Ratings");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.User", b =>
@@ -696,10 +646,8 @@ namespace MoviePlusApi.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("User");
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
@@ -714,40 +662,31 @@ namespace MoviePlusApi.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_Users_Email");
 
-                    b.ToTable("Users", t =>
-                        {
-                            t.HasCheckConstraint("CK_User_Role", "Role IN ('Admin','User')");
-                        });
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.UserFollow", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                    b.Property<Guid>("FollowerId")
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    b.Property<Guid>("FolloweeId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
-                    b.Property<Guid>("FolloweeId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
 
-                    b.Property<Guid>("FollowerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
+                    b.HasKey("FollowerId", "FolloweeId");
 
                     b.HasIndex("FolloweeId");
-
-                    b.HasIndex("FollowerId", "FolloweeId")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_UserFollows");
 
                     b.ToTable("UserFollows");
                 });
@@ -782,16 +721,31 @@ namespace MoviePlusApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "TmdbId", "MediaType")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
-                    b.ToTable("Watchlists", t =>
-                        {
-                            t.HasCheckConstraint("CK_Watch_Media", "MediaType IN ('movie','tv')");
-                        });
+                    b.ToTable("Watchlists");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.ConversationParticipant", b =>
+                {
+                    b.HasOne("MoviePlusApi.Models.Chat.Conversation", "Conversation")
+                        .WithMany("Participants")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.Chat.DeviceToken", b =>
                 {
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany()
@@ -804,27 +758,62 @@ namespace MoviePlusApi.Migrations
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.Message", b =>
                 {
+                    b.HasOne("MoviePlusApi.Models.Chat.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MoviePlusApi.Models.User", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Conversation");
+
                     b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.MessageReaction", b =>
                 {
+                    b.HasOne("MoviePlusApi.Models.Chat.Message", "Message")
+                        .WithMany("Reactions")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("Message");
 
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Chat.MessageReadReceipt", b =>
+                {
+                    b.HasOne("MoviePlusApi.Models.Chat.Message", "Message")
+                        .WithMany("ReadReceipts")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.Chat.UserConnection", b =>
                 {
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany()
@@ -840,14 +829,18 @@ namespace MoviePlusApi.Migrations
                     b.HasOne("MoviePlusApi.Models.PostComment", "PostComment")
                         .WithMany("CommentReactions")
                         .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MoviePlusApi.Models.User", "User")
-                        .WithMany("CommentReactions")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", null)
+                        .WithMany("CommentReactions")
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("PostComment");
 
@@ -859,7 +852,7 @@ namespace MoviePlusApi.Migrations
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany("Favorites")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -870,7 +863,7 @@ namespace MoviePlusApi.Migrations
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany("Histories")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -881,7 +874,7 @@ namespace MoviePlusApi.Migrations
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany("Notes")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -903,7 +896,7 @@ namespace MoviePlusApi.Migrations
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany("Posts")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -913,20 +906,23 @@ namespace MoviePlusApi.Migrations
                 {
                     b.HasOne("MoviePlusApi.Models.PostComment", "ParentComment")
                         .WithMany("Replies")
-                        .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("ParentCommentId");
 
                     b.HasOne("MoviePlusApi.Models.Post", "Post")
                         .WithMany("PostComments")
                         .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MoviePlusApi.Models.User", "User")
-                        .WithMany("PostComments")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", null)
+                        .WithMany("PostComments")
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("ParentComment");
 
@@ -940,14 +936,18 @@ namespace MoviePlusApi.Migrations
                     b.HasOne("MoviePlusApi.Models.Post", "Post")
                         .WithMany("PostReactions")
                         .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MoviePlusApi.Models.User", "User")
-                        .WithMany("PostReactions")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("MoviePlusApi.Models.User", null)
+                        .WithMany("PostReactions")
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("Post");
 
@@ -959,7 +959,7 @@ namespace MoviePlusApi.Migrations
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany("Ratings")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
@@ -989,10 +989,24 @@ namespace MoviePlusApi.Migrations
                     b.HasOne("MoviePlusApi.Models.User", "User")
                         .WithMany("Watchlists")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.Chat.Conversation", b =>
+                {
+                    b.Navigation("Messages");
+
+                    b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("MoviePlusApi.Models.Chat.Message", b =>
+                {
+                    b.Navigation("Reactions");
+
+                    b.Navigation("ReadReceipts");
                 });
 
             modelBuilder.Entity("MoviePlusApi.Models.Post", b =>

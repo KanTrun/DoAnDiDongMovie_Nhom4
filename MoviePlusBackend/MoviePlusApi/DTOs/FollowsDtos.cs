@@ -34,4 +34,20 @@ namespace MoviePlusApi.DTOs
         int Page = 1,
         int PageSize = 20
     );
+
+    // Follow Stats DTO
+    public record FollowStatsDto(
+        int FollowersCount,
+        int FollowingCount
+    );
+
+
+    // Paged Users Response
+    public record PagedUsersResponse(
+        List<UserDto> Users,
+        int TotalCount,
+        int Page,
+        int PageSize,
+        int TotalPages
+    );
 }

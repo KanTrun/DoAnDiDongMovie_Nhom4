@@ -3,11 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/admin_provider.dart';
 import '../../core/models/backend_models.dart';
 
-class AdminStatsScreen extends ConsumerWidget {
+class AdminStatsScreen extends ConsumerStatefulWidget {
   const AdminStatsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminStatsScreen> createState() => _AdminStatsScreenState();
+}
+
+class _AdminStatsScreenState extends ConsumerState<AdminStatsScreen> with SingleTickerProviderStateMixin {
+
+  @override
+  Widget build(BuildContext context) {
     final statsAsync = ref.watch(adminStatsProvider);
 
     return Scaffold(
@@ -53,35 +59,35 @@ class AdminStatsScreen extends ConsumerWidget {
         children: [
           // Overview section
           _buildSection(
-            'Platform Overview',
+            'Tổng quan nền tảng',
             [
               _buildStatCard(
-                'Total Users',
+                'Tổng người dùng',
                 stats.totalUsers.toString(),
                 Icons.people,
                 Colors.blue,
-                'All registered users',
+                'Tất cả người dùng đã đăng ký',
               ),
               _buildStatCard(
-                'Administrators',
+                'Quản trị viên',
                 stats.totalAdmins.toString(),
                 Icons.admin_panel_settings,
                 Colors.red,
-                'Admin accounts',
+                'Tài khoản quản trị',
               ),
               _buildStatCard(
-                'Regular Users',
+                'Người dùng thường',
                 stats.totalRegularUsers.toString(),
                 Icons.person,
                 Colors.green,
-                'Standard user accounts',
+                'Tài khoản người dùng thường',
               ),
               _buildStatCard(
-                'Recent Users',
+                'Người dùng mới',
                 stats.recentUsers.toString(),
                 Icons.person_add,
                 Colors.purple,
-                'Joined in last 7 days',
+                'Tham gia trong 7 ngày qua',
               ),
             ],
           ),
@@ -90,42 +96,42 @@ class AdminStatsScreen extends ConsumerWidget {
 
           // User engagement section
           _buildSection(
-            'User Engagement',
+            'Tương tác người dùng',
             [
               _buildStatCard(
-                'Total Favorites',
+                'Tổng yêu thích',
                 stats.totalFavorites.toString(),
                 Icons.favorite,
                 Colors.pink,
-                'Movies/TV shows favorited',
+                'Phim/TV được yêu thích',
               ),
               _buildStatCard(
-                'Total Watchlists',
+                'Tổng danh sách xem',
                 stats.totalWatchlists.toString(),
                 Icons.playlist_add,
                 Colors.orange,
-                'Items in watchlists',
+                'Mục trong danh sách xem',
               ),
               _buildStatCard(
-                'Total Notes',
+                'Tổng ghi chú',
                 stats.totalNotes.toString(),
                 Icons.note,
                 Colors.amber,
-                'User notes created',
+                'Ghi chú người dùng tạo',
               ),
               _buildStatCard(
-                'Total Histories',
+                'Tổng lịch sử',
                 stats.totalHistories.toString(),
                 Icons.history,
                 Colors.teal,
-                'User activity records',
+                'Bản ghi hoạt động người dùng',
               ),
               _buildStatCard(
-                'Total Ratings',
+                'Tổng đánh giá',
                 stats.totalRatings.toString(),
                 Icons.star,
                 Colors.yellow,
-                'User ratings given',
+                'Đánh giá người dùng đã cho',
               ),
             ],
           ),
@@ -156,9 +162,9 @@ class AdminStatsScreen extends ConsumerWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1.8,
           children: children,
         ),
       ],
@@ -173,7 +179,7 @@ class AdminStatsScreen extends ConsumerWidget {
     String description,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(12),
@@ -181,36 +187,39 @@ class AdminStatsScreen extends ConsumerWidget {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 32, color: color),
-          const SizedBox(height: 8),
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 3),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             description,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 7,
               color: Colors.grey[400],
             ),
             textAlign: TextAlign.center,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ],
@@ -224,7 +233,7 @@ class AdminStatsScreen extends ConsumerWidget {
     final avgNotesPerUser = stats.totalUsers > 0 ? (stats.totalNotes / stats.totalUsers).toStringAsFixed(1) : '0';
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey[900],
         borderRadius: BorderRadius.circular(12),
@@ -234,34 +243,34 @@ class AdminStatsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Key Insights',
+            'Thông tin chính',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildInsightRow(
-            'Average favorites per user',
+            'Trung bình yêu thích/người dùng',
             '$avgFavoritesPerUser',
             Icons.favorite,
             Colors.pink,
           ),
           _buildInsightRow(
-            'Average watchlists per user',
+            'Trung bình danh sách xem/người dùng',
             '$avgWatchlistsPerUser',
             Icons.playlist_add,
             Colors.orange,
           ),
           _buildInsightRow(
-            'Average notes per user',
+            'Trung bình ghi chú/người dùng',
             '$avgNotesPerUser',
             Icons.note,
             Colors.amber,
           ),
           _buildInsightRow(
-            'Admin to user ratio',
+            'Tỷ lệ Admin:Người dùng',
             '${stats.totalAdmins}:${stats.totalRegularUsers}',
             Icons.admin_panel_settings,
             Colors.red,

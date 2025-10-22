@@ -169,11 +169,18 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
         title: Text(
           user.displayName ?? user.email,
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(user.email, style: TextStyle(color: Colors.grey[400])),
+            Text(
+              user.email, 
+              style: TextStyle(color: Colors.grey[400]),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -193,10 +200,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-            Text(
-              'Tham gia: ${_formatDate(user.createdAt)}',
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-            ),
+                Expanded(
+                  child: Text(
+                    'Tham gia: ${_formatDate(user.createdAt)}',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           ],

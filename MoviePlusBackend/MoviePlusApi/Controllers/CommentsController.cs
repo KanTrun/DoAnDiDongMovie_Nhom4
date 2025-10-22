@@ -10,13 +10,16 @@ namespace MoviePlusApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CommentsController : ControllerBase
     {
         private readonly MoviePlusContext _context;
+        private readonly Services.ICommentService _commentService;
 
-        public CommentsController(MoviePlusContext context)
+        public CommentsController(MoviePlusContext context, Services.ICommentService commentService)
         {
             _context = context;
+            _commentService = commentService;
         }
 
         [HttpGet("posts/{postId}")]

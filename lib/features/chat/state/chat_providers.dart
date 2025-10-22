@@ -36,6 +36,15 @@ class HubController extends Notifier<bool> {
   Stream get typingStream => _hub.typingStream;
   Stream get stopTypingStream => _hub.stopTypingStream;
   Stream get messageReactionStream => _hub.messageReactionStream;
+  
+  void dispose() {
+    // Cleanup hub service
+    try {
+      _hub.stop();
+    } catch (_) {
+      // Ignore errors during dispose
+    }
+  }
 }
 
 final currentOpenConversationIdProvider = StateProvider<int?>((_) => null);

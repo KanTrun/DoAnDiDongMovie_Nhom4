@@ -29,37 +29,6 @@ namespace MoviePlusApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "DeviceTokens",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Token = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Platform = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DeviceTokens", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserConnections",
-                columns: table => new
-                {
-                    ConnectionId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DeviceInfo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    ConnectedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    LastSeenAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserConnections", x => x.ConnectionId);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -73,12 +42,11 @@ namespace MoviePlusApi.Migrations
                     TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
                     TwoFactorSecret = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     TwoFactorEnabledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "User")
+                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
-                    table.CheckConstraint("CK_User_Role", "Role IN ('Admin','User')");
                 });
 
             migrationBuilder.CreateTable(
@@ -94,7 +62,35 @@ namespace MoviePlusApi.Migrations
                 {
                     table.PrimaryKey("PK_ConversationParticipants", x => new { x.ConversationId, x.UserId });
                     table.ForeignKey(
+                        name: "FK_ConversationParticipants_Conversations_ConversationId",
+                        column: x => x.ConversationId,
+                        principalTable: "Conversations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_ConversationParticipants_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DeviceTokens",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Token = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Platform = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DeviceTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DeviceTokens_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -115,12 +111,12 @@ namespace MoviePlusApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Favorites", x => x.Id);
-                    table.CheckConstraint("CK_Fav_Media", "MediaType IN ('movie','tv')");
                     table.ForeignKey(
                         name: "FK_Favorites_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -139,48 +135,8 @@ namespace MoviePlusApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Histories", x => x.Id);
-                    table.CheckConstraint("CK_Histories_Action", "Action IN ('TrailerView','DetailOpen','ProviderClick','NoteCreated','RatingGiven','FavoriteAdded','FavoriteRemoved','WatchlistAdded','WatchlistRemoved','ShareClick')");
-                    table.CheckConstraint("CK_Histories_Media", "MediaType IN ('movie','tv')");
                     table.ForeignKey(
                         name: "FK_Histories_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MessageReactions",
-                columns: table => new
-                {
-                    MessageId = table.Column<long>(type: "bigint", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Reaction = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MessageReactions", x => new { x.MessageId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_MessageReactions_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MessageReadReceipts",
-                columns: table => new
-                {
-                    MessageId = table.Column<long>(type: "bigint", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MessageReadReceipts", x => new { x.MessageId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_MessageReadReceipts_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -207,6 +163,12 @@ namespace MoviePlusApi.Migrations
                 {
                     table.PrimaryKey("PK_Messages", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Messages_Conversations_ConversationId",
+                        column: x => x.ConversationId,
+                        principalTable: "Conversations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_Messages_Users_SenderId",
                         column: x => x.SenderId,
                         principalTable: "Users",
@@ -230,12 +192,12 @@ namespace MoviePlusApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Notes", x => x.Id);
-                    table.CheckConstraint("CK_Notes_Media", "MediaType IN ('movie','tv')");
                     table.ForeignKey(
                         name: "FK_Notes_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -273,22 +235,21 @@ namespace MoviePlusApi.Migrations
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     PosterPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Visibility = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)1),
-                    LikeCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    CommentCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    Visibility = table.Column<byte>(type: "tinyint", nullable: false),
+                    LikeCount = table.Column<int>(type: "int", nullable: false),
+                    CommentCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Posts", x => x.Id);
-                    table.CheckConstraint("CK_Post_Media", "MediaType IN ('movie','tv') OR MediaType IS NULL");
-                    table.CheckConstraint("CK_Post_Visibility", "Visibility IN (0,1,2)");
                     table.ForeignKey(
                         name: "FK_Posts_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -307,28 +268,47 @@ namespace MoviePlusApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Ratings", x => x.Id);
-                    table.CheckConstraint("CK_Rate_Media", "MediaType IN ('movie','tv')");
-                    table.CheckConstraint("CK_Rate_Score", "Score BETWEEN 1.0 AND 10.0");
                     table.ForeignKey(
                         name: "FK_Ratings_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserConnections",
+                columns: table => new
+                {
+                    ConnectionId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DeviceInfo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ConnectedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
+                    LastSeenAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserConnections", x => x.ConnectionId);
+                    table.ForeignKey(
+                        name: "FK_UserConnections_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "UserFollows",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
                     FollowerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FolloweeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<long>(type: "bigint", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserFollows", x => x.Id);
+                    table.PrimaryKey("PK_UserFollows", x => new { x.FollowerId, x.FolloweeId });
                     table.ForeignKey(
                         name: "FK_UserFollows_Users_FolloweeId",
                         column: x => x.FolloweeId,
@@ -356,9 +336,58 @@ namespace MoviePlusApi.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Watchlists", x => x.Id);
-                    table.CheckConstraint("CK_Watch_Media", "MediaType IN ('movie','tv')");
                     table.ForeignKey(
                         name: "FK_Watchlists_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MessageReactions",
+                columns: table => new
+                {
+                    MessageId = table.Column<long>(type: "bigint", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Reaction = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MessageReactions", x => new { x.MessageId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_MessageReactions_Messages_MessageId",
+                        column: x => x.MessageId,
+                        principalTable: "Messages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MessageReactions_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MessageReadReceipts",
+                columns: table => new
+                {
+                    MessageId = table.Column<long>(type: "bigint", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MessageReadReceipts", x => new { x.MessageId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_MessageReadReceipts_Messages_MessageId",
+                        column: x => x.MessageId,
+                        principalTable: "Messages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MessageReadReceipts_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id");
@@ -374,9 +403,10 @@ namespace MoviePlusApi.Migrations
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ParentCommentId = table.Column<long>(type: "bigint", nullable: true),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LikeCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    LikeCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UserId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -385,16 +415,21 @@ namespace MoviePlusApi.Migrations
                         name: "FK_PostComments_PostComments_ParentCommentId",
                         column: x => x.ParentCommentId,
                         principalTable: "PostComments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_PostComments_Posts_PostId",
                         column: x => x.PostId,
                         principalTable: "Posts",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_PostComments_Users_UserId",
                         column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_PostComments_Users_UserId1",
+                        column: x => x.UserId1,
                         principalTable: "Users",
                         principalColumn: "Id");
                 });
@@ -407,21 +442,27 @@ namespace MoviePlusApi.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PostId = table.Column<long>(type: "bigint", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Type = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)1),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    Type = table.Column<byte>(type: "tinyint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
+                    UserId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PostReactions", x => x.Id);
-                    table.CheckConstraint("CK_PostReaction_Type", "Type = 1");
                     table.ForeignKey(
                         name: "FK_PostReactions_Posts_PostId",
                         column: x => x.PostId,
                         principalTable: "Posts",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_PostReactions_Users_UserId",
                         column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_PostReactions_Users_UserId1",
+                        column: x => x.UserId1,
                         principalTable: "Users",
                         principalColumn: "Id");
                 });
@@ -434,24 +475,35 @@ namespace MoviePlusApi.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CommentId = table.Column<long>(type: "bigint", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Type = table.Column<byte>(type: "tinyint", nullable: false, defaultValue: (byte)1),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
+                    Type = table.Column<byte>(type: "tinyint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
+                    UserId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CommentReactions", x => x.Id);
-                    table.CheckConstraint("CK_CommentReaction_Type", "Type = 1");
                     table.ForeignKey(
                         name: "FK_CommentReactions_PostComments_CommentId",
                         column: x => x.CommentId,
                         principalTable: "PostComments",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CommentReactions_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_CommentReactions_Users_UserId1",
+                        column: x => x.UserId1,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CommentReactions_CommentId",
+                table: "CommentReactions",
+                column: "CommentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CommentReactions_UserId",
@@ -459,10 +511,9 @@ namespace MoviePlusApi.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "UQ_CommentReactions",
+                name: "IX_CommentReactions_UserId1",
                 table: "CommentReactions",
-                columns: new[] { "CommentId", "UserId", "Type" },
-                unique: true);
+                column: "UserId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ConversationParticipants_UserId",
@@ -470,30 +521,19 @@ namespace MoviePlusApi.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DeviceTokens_Token",
-                table: "DeviceTokens",
-                column: "Token");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_DeviceTokens_UserId",
                 table: "DeviceTokens",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Favorites_UserId_TmdbId_MediaType",
+                name: "IX_Favorites_UserId",
                 table: "Favorites",
-                columns: new[] { "UserId", "TmdbId", "MediaType" },
-                unique: true);
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Histories_Tmdb_Action",
+                name: "IX_Histories_UserId",
                 table: "Histories",
-                columns: new[] { "TmdbId", "MediaType", "Action", "WatchedAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Histories_User_Time",
-                table: "Histories",
-                columns: new[] { "UserId", "WatchedAt" });
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MessageReactions_UserId",
@@ -516,14 +556,9 @@ namespace MoviePlusApi.Migrations
                 column: "SenderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Notes_UserId_CreatedAt",
+                name: "IX_Notes_UserId",
                 table: "Notes",
-                columns: new[] { "UserId", "CreatedAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Notes_UserId_TmdbId_MediaType",
-                table: "Notes",
-                columns: new[] { "UserId", "TmdbId", "MediaType" });
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_User",
@@ -536,14 +571,25 @@ namespace MoviePlusApi.Migrations
                 column: "ParentCommentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PostComments_Post",
+                name: "IX_PostComments_PostId",
                 table: "PostComments",
-                columns: new[] { "PostId", "CreatedAt" });
+                column: "PostId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PostComments_User",
+                name: "IX_PostComments_UserId",
                 table: "PostComments",
-                columns: new[] { "UserId", "CreatedAt" });
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostComments_UserId1",
+                table: "PostComments",
+                column: "UserId1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PostReactions_PostId_UserId",
+                table: "PostReactions",
+                columns: new[] { "PostId", "UserId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_PostReactions_UserId",
@@ -551,31 +597,19 @@ namespace MoviePlusApi.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "UQ_PostReactions",
+                name: "IX_PostReactions_UserId1",
                 table: "PostReactions",
-                columns: new[] { "PostId", "UserId", "Type" },
-                unique: true);
+                column: "UserId1");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Posts_ByMovie",
+                name: "IX_Posts_UserId",
                 table: "Posts",
-                columns: new[] { "TmdbId", "MediaType", "Visibility", "CreatedAt" });
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Posts_ByUser",
-                table: "Posts",
-                columns: new[] { "UserId", "CreatedAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Posts_Public_Feed",
-                table: "Posts",
-                columns: new[] { "Visibility", "CreatedAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Ratings_UserId_TmdbId_MediaType",
+                name: "IX_Ratings_UserId",
                 table: "Ratings",
-                columns: new[] { "UserId", "TmdbId", "MediaType" },
-                unique: true);
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserConnections_UserId",
@@ -588,22 +622,15 @@ namespace MoviePlusApi.Migrations
                 column: "FolloweeId");
 
             migrationBuilder.CreateIndex(
-                name: "UQ_UserFollows",
-                table: "UserFollows",
-                columns: new[] { "FollowerId", "FolloweeId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Watchlists_UserId_TmdbId_MediaType",
+                name: "IX_Watchlists_UserId",
                 table: "Watchlists",
-                columns: new[] { "UserId", "TmdbId", "MediaType" },
-                unique: true);
+                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -614,9 +641,6 @@ namespace MoviePlusApi.Migrations
 
             migrationBuilder.DropTable(
                 name: "ConversationParticipants");
-
-            migrationBuilder.DropTable(
-                name: "Conversations");
 
             migrationBuilder.DropTable(
                 name: "DeviceTokens");
@@ -632,9 +656,6 @@ namespace MoviePlusApi.Migrations
 
             migrationBuilder.DropTable(
                 name: "MessageReadReceipts");
-
-            migrationBuilder.DropTable(
-                name: "Messages");
 
             migrationBuilder.DropTable(
                 name: "Notes");
@@ -661,7 +682,13 @@ namespace MoviePlusApi.Migrations
                 name: "PostComments");
 
             migrationBuilder.DropTable(
+                name: "Messages");
+
+            migrationBuilder.DropTable(
                 name: "Posts");
+
+            migrationBuilder.DropTable(
+                name: "Conversations");
 
             migrationBuilder.DropTable(
                 name: "Users");

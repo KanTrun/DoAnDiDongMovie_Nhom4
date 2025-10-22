@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/conversation.dart';
 import '../models/message.dart';
@@ -11,8 +12,11 @@ final conversationsProvider = StateNotifierProvider<ConversationsNotifier, Async
 class ConversationsNotifier extends StateNotifier<AsyncValue<List<Conversation>>> {
   final Ref ref; StreamSubscription? _sub;
   ConversationsNotifier(this.ref) : super(const AsyncValue.loading()) {
-    _load();
-    _listenHub();
+    // Delay initialization để tránh modify provider trong build phase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _load();
+      _listenHub();
+    });
   }
 
   Future<void> _load() async {

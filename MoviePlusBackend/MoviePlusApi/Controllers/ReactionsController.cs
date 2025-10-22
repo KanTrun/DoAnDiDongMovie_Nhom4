@@ -14,10 +14,12 @@ namespace MoviePlusApi.Controllers
     public class ReactionsController : ControllerBase
     {
         private readonly MoviePlusContext _context;
+        private readonly Services.IReactionService _reactionService;
 
-        public ReactionsController(MoviePlusContext context)
+        public ReactionsController(MoviePlusContext context, Services.IReactionService reactionService)
         {
             _context = context;
+            _reactionService = reactionService;
         }
 
         [HttpPost("posts/{postId}/like")]

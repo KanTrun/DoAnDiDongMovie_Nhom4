@@ -10,6 +10,7 @@ namespace MoviePlusApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PostsController : ControllerBase
     {
         private readonly MoviePlusContext _context;
