@@ -7,6 +7,8 @@ using MoviePlusApi.Services;
 using Microsoft.AspNetCore.Identity;
 using MoviePlusApi.Models;
 using MoviePlusApi.Scripts;
+using MoviePlusApi.Hubs;
+using MoviePlusApi.Services.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<MoviePlusContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? 
                         "Server=HP\\KANSQL;Database=MoviePlusDb;Trusted_Connection=true;MultipleActiveResultSets=true;TrustServerCertificate=true"));
+
+
+
 
 // Add JWT Service
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -45,16 +50,45 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings["Audience"] ?? "MoviePlusClient",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
         };
+        
+        // Allow SignalR clients to send token via query string
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
+
+// Add SignalR
+builder.Services.AddSignalR();
+
+// Add Chat Services
+builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IConnectionService, ConnectionService>();
+builder.Services.AddScoped<IPushService, FcmPushService>();
 
 // Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(
+                "https://silvana-detainable-nongratifyingly.ngrok-free.dev",
+                "http://localhost:3000",
+                "http://localhost:8080"
+              )
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -72,6 +106,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
 
 // Create admin user on startup
 using (var scope = app.Services.CreateScope())

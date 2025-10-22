@@ -80,6 +80,13 @@ dependencies:
   # Location and Maps
   geolocator: ^10.1.0
   http: ^1.1.0
+  
+  # Chat System Dependencies
+  web_socket_channel: ^2.4.0
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
+  firebase_messaging: ^14.7.10
+  firebase_core: ^2.24.2
 
 dev_dependencies:
   flutter_test:

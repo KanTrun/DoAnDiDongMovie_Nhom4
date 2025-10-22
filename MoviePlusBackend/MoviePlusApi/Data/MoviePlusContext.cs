@@ -23,10 +23,77 @@ namespace MoviePlusApi.Data
         public DbSet<CommentReaction> CommentReactions { get; set; }
         public DbSet<UserFollow> UserFollows { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        
+        // Chat system tables
+        public DbSet<MoviePlusApi.Models.Chat.Conversation> Conversations { get; set; }
+        public DbSet<MoviePlusApi.Models.Chat.ConversationParticipant> ConversationParticipants { get; set; }
+        public DbSet<MoviePlusApi.Models.Chat.Message> Messages { get; set; }
+        public DbSet<MoviePlusApi.Models.Chat.MessageReadReceipt> MessageReadReceipts { get; set; }
+        public DbSet<MoviePlusApi.Models.Chat.UserConnection> UserConnections { get; set; }
+        public DbSet<MoviePlusApi.Models.Chat.MessageReaction> MessageReactions { get; set; }
+        public DbSet<MoviePlusApi.Models.Chat.DeviceToken> DeviceTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Disable foreign key constraints for chat entities
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.ConversationParticipant>(entity =>
+            {
+                entity.HasNoKey();
+                entity.Property(e => e.JoinedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Role).HasMaxLength(50);
+                entity.Ignore(e => e.Conversation);
+            });
+            
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.Message>(entity =>
+            {
+                entity.HasNoKey();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Type).HasDefaultValue("text");
+                entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+                entity.Property(e => e.Content).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.MediaUrl).HasMaxLength(1000);
+                entity.Property(e => e.MediaType).HasMaxLength(50);
+                entity.Property(e => e.Type).HasMaxLength(50);
+                entity.Ignore(e => e.Conversation);
+                entity.Ignore(e => e.ReadReceipts);
+                entity.Ignore(e => e.Reactions);
+            });
+            
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.MessageReadReceipt>(entity =>
+            {
+                entity.HasNoKey();
+                entity.Property(e => e.ReadAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Ignore(e => e.Message);
+            });
+            
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.MessageReaction>(entity =>
+            {
+                entity.HasNoKey();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Reaction).HasMaxLength(50);
+                entity.Ignore(e => e.Message);
+            });
+            
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.UserConnection>(entity =>
+            {
+                entity.HasNoKey();
+                entity.Property(e => e.ConnectionId).HasMaxLength(200);
+                entity.Property(e => e.DeviceInfo).HasMaxLength(500);
+                entity.Property(e => e.ConnectedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.LastSeenAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Ignore(e => e.User);
+            });
+            
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.DeviceToken>(entity =>
+            {
+                entity.HasNoKey();
+                entity.Property(e => e.Token).HasMaxLength(500);
+                entity.Property(e => e.Platform).HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Ignore(e => e.User);
+            });
 
             // User configuration
             modelBuilder.Entity<User>(entity =>
@@ -50,7 +117,7 @@ namespace MoviePlusApi.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Favorites)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Watchlist configuration
@@ -64,7 +131,7 @@ namespace MoviePlusApi.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Watchlists)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Note configuration
@@ -80,7 +147,7 @@ namespace MoviePlusApi.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Notes)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // History configuration
@@ -103,7 +170,7 @@ namespace MoviePlusApi.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Histories)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Rating configuration
@@ -119,7 +186,7 @@ namespace MoviePlusApi.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Ratings)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Post configuration
@@ -143,7 +210,7 @@ namespace MoviePlusApi.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Posts)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // PostReaction configuration
@@ -251,7 +318,100 @@ namespace MoviePlusApi.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.Notifications)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // Chat system configuration
+            // Conversation configuration
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.Conversation>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.IsGroup).HasDefaultValue(false);
+                entity.Property(e => e.Title).HasMaxLength(200);
+                entity.Ignore(e => e.Participants);
+                entity.Ignore(e => e.Messages);
+            });
+
+            // ConversationParticipant configuration
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.ConversationParticipant>(entity =>
+            {
+                entity.HasKey(e => new { e.ConversationId, e.UserId });
+                entity.Property(e => e.JoinedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Role).HasMaxLength(50);
+                
+                // Explicitly ignore foreign key relationships
+                entity.Ignore(e => e.Conversation);
+            });
+
+            // Message configuration
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.Message>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.Type).HasDefaultValue("text").HasMaxLength(50);
+                entity.Property(e => e.MediaUrl).HasMaxLength(1000);
+                entity.Property(e => e.MediaType).HasMaxLength(50);
+                entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+                
+                // Indexes for performance
+                entity.HasIndex(e => new { e.ConversationId, e.CreatedAt }).HasDatabaseName("IX_Messages_ConversationId_CreatedAt");
+                
+                // Explicitly ignore foreign key relationships
+                entity.Ignore(e => e.Conversation);
+            });
+
+            // MessageReadReceipt configuration
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.MessageReadReceipt>(entity =>
+            {
+                entity.HasKey(e => new { e.MessageId, e.UserId });
+                entity.Property(e => e.ReadAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                
+                // Explicitly ignore foreign key relationships
+                entity.Ignore(e => e.Message);
+            });
+
+            // UserConnection configuration
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.UserConnection>(entity =>
+            {
+                entity.HasKey(e => e.ConnectionId);
+                entity.Property(e => e.ConnectionId).HasMaxLength(200);
+                entity.Property(e => e.DeviceInfo).HasMaxLength(500);
+                entity.Property(e => e.ConnectedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.LastSeenAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                
+                // Index for performance
+                entity.HasIndex(e => e.UserId).HasDatabaseName("IX_UserConnections_UserId");
+                
+                // Explicitly ignore foreign key relationships
+                entity.Ignore(e => e.User);
+            });
+
+            // MessageReaction configuration
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.MessageReaction>(entity =>
+            {
+                entity.HasKey(e => new { e.MessageId, e.UserId });
+                entity.Property(e => e.Reaction).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                
+                // Explicitly ignore foreign key relationships
+                entity.Ignore(e => e.Message);
+            });
+
+            // DeviceToken configuration
+            modelBuilder.Entity<MoviePlusApi.Models.Chat.DeviceToken>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Token).HasMaxLength(500).IsRequired();
+                entity.Property(e => e.Platform).HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+                
+                // Indexes for performance
+                entity.HasIndex(e => e.UserId).HasDatabaseName("IX_DeviceTokens_UserId");
+                entity.HasIndex(e => e.Token).HasDatabaseName("IX_DeviceTokens_Token");
+                
+                // Explicitly ignore foreign key relationships
+                entity.Ignore(e => e.User);
             });
         }
     }
