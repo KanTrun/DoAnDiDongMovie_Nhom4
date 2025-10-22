@@ -231,10 +231,16 @@ class _MessageBubble extends StatelessWidget {
   }
 
   static String _formatTime(DateTime dt) {
-    final local = dt.isUtc ? dt.toLocal() : dt;
+    // Đảm bảo thời gian được parse đúng từ UTC
+    final utcTime = dt.isUtc ? dt : DateTime.parse(dt.toIso8601String() + 'Z').toUtc();
+    final localTime = utcTime.toLocal();
     final now = DateTime.now();
-    final diff = now.difference(local);
-    if (diff.isNegative) return 'now';
+    final diff = now.difference(localTime);
+    
+    // Nếu thời gian trong tương lai (lỗi timezone), hiển thị "now"
+    if (diff.isNegative || diff.inSeconds < 5) return 'now';
+    
+    // Hiển thị thời gian chính xác
     if (diff.inDays > 0) return '${diff.inDays}d';
     if (diff.inHours > 0) return '${diff.inHours}h';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m';

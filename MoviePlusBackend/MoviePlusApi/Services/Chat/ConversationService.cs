@@ -126,28 +126,25 @@ namespace MoviePlusApi.Services.Chat
 
         public async Task<ConversationDto[]> GetConversationsForUserAsync(Guid userId)
         {
-            // Get conversation IDs where user is a participant
+            // SECURITY FIX: Only get conversations where user is a participant
+            // Do NOT include conversations just because user is the creator
             var participantConversationIds = await _context.ConversationParticipants
                 .Where(cp => cp.UserId == userId)
                 .Select(cp => cp.ConversationId)
                 .ToListAsync();
 
-            // Get conversations created by user
-            var createdConversationIds = await _context.Conversations
-                .Where(c => c.CreatedBy == userId)
-                .Select(c => c.Id)
-                .ToListAsync();
-
-            // Combine both lists
-            var allConversationIds = participantConversationIds.Union(createdConversationIds).ToList();
-
             Console.WriteLine($"DEBUG: Found {participantConversationIds.Count} participant conversations for user {userId}");
-            Console.WriteLine($"DEBUG: Found {createdConversationIds.Count} created conversations for user {userId}");
-            Console.WriteLine($"DEBUG: Total conversation IDs: {string.Join(", ", allConversationIds)}");
+            Console.WriteLine($"DEBUG: Conversation IDs: {string.Join(", ", participantConversationIds)}");
+
+            if (participantConversationIds.Count == 0)
+            {
+                Console.WriteLine($"DEBUG: No conversations found for user {userId}");
+                return new ConversationDto[0];
+            }
 
             // Get conversations by IDs with participants
             var conversations = await _context.Conversations
-                .Where(c => allConversationIds.Contains(c.Id))
+                .Where(c => participantConversationIds.Contains(c.Id))
                 .Include(c => c.Participants)
                 .ThenInclude(p => p.User)
                 .OrderByDescending(c => c.LastMessageAt ?? c.CreatedAt)

@@ -1,15 +1,39 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/conversation.dart';
 import '../state/conversations_notifier.dart';
 import 'chat_screen.dart';
 import 'new_conversation_sheet.dart';
+import '../../../core/providers/auth_provider.dart';
 
-class ConversationsScreen extends ConsumerWidget {
+class ConversationsScreen extends ConsumerStatefulWidget {
   const ConversationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConversationsScreen> createState() => _ConversationsScreenState();
+}
+
+class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
+  Timer? _timeRefreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Refresh thời gian mỗi 30 giây để cập nhật "now" → "1m", "2m", etc.
+    _timeRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timeRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final convAsync = ref.watch(conversationsProvider);
 
     Future<void> _openCreator() async {
@@ -46,7 +70,7 @@ class ConversationsScreen extends ConsumerWidget {
             final c = convs[i];
             return ListTile(
               leading: CircleAvatar(child: Icon(c.isGroup ? Icons.group : Icons.person)),
-              title: Text(_title(c),
+              title: Text(_title(c, ref),
                 style: TextStyle(fontWeight: c.unreadCount > 0 ? FontWeight.bold : FontWeight.normal)),
               subtitle: Text(c.lastMessage?.content ?? 'No messages yet', maxLines: 1, overflow: TextOverflow.ellipsis),
               trailing: Text(_shortTime(c.lastMessageAt ?? c.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -62,16 +86,39 @@ class ConversationsScreen extends ConsumerWidget {
     );
   }
 
-  String _title(Conversation c) {
+  String _title(Conversation c, WidgetRef ref) {
     if (c.isGroup) return c.title ?? 'Group';
-    if (c.participants.isNotEmpty) return c.participants.first.userName ?? c.participants.first.userId;
+    
+    // For 1-1 conversations, find the other participant (not current user)
+    if (c.participants.isNotEmpty) {
+      // Get current user ID from auth provider
+      final currentUserId = ref.read(currentUserProvider)?.userId;
+      
+      // Find the other participant (not current user)
+      final otherParticipant = c.participants.firstWhere(
+        (p) => p.userId != currentUserId,
+        orElse: () => c.participants.first,
+      );
+      
+      // Return display name or email, fallback to userId
+      return otherParticipant.userName ?? 
+             otherParticipant.userId.substring(0, 8) + '...';
+    }
+    
     return 'Unknown';
   }
 
   String _shortTime(DateTime dt) {
-    final local = dt.isUtc ? dt.toLocal() : dt;
-    final diff = DateTime.now().difference(local);
-    if (diff.isNegative) return 'now'; // phòng lệch giờ máy
+    // Đảm bảo thời gian được parse đúng từ UTC
+    final utcTime = dt.isUtc ? dt : DateTime.parse(dt.toIso8601String() + 'Z').toUtc();
+    final localTime = utcTime.toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(localTime);
+    
+    // Nếu thời gian trong tương lai (lỗi timezone), hiển thị "now"
+    if (diff.isNegative || diff.inSeconds < 5) return 'now';
+    
+    // Hiển thị thời gian chính xác
     if (diff.inDays > 0) return '${diff.inDays}d';
     if (diff.inHours > 0) return '${diff.inHours}h';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m';
