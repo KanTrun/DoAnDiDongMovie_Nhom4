@@ -179,24 +179,22 @@ class TmdbService {
     }
   }
 
-  // Search - Enhanced multi-language search for both Movies and TV Shows
+  // Search - Fast parallel search like TMDB
   static Future<MovieResponse> searchMovies(String query, {int page = 1}) async {
     try {
       final searchResults = <Movie>[];
       final seenIds = <int>{};
       
-      // Strategy 1: Try multiple search variations with multiple pages
-      final searchVariations = _generateSearchVariations(query);
+      // Fast parallel search - search all pages and languages simultaneously
+      final futures = <Future<void>>[];
       
-      for (final searchQuery in searchVariations) {
-        // Search multiple pages for comprehensive results
-        await _searchMultiplePages(searchQuery, searchResults, seenIds, page);
-        
-        // If we found results, we can stop trying other variations
-        if (searchResults.isNotEmpty) {
-          break;
-        }
+      // Search all 5 pages in parallel
+      for (int currentPage = 1; currentPage <= 5; currentPage++) {
+        futures.add(_searchPageParallel(query, searchResults, seenIds, currentPage));
       }
+      
+      // Wait for all searches to complete
+      await Future.wait(futures);
       
       return MovieResponse(
         page: page,
@@ -205,8 +203,52 @@ class TmdbService {
         totalResults: searchResults.length,
       );
     } on DioException catch (e) {
-      // Search error occurred
       throw _handleError(e);
+    }
+  }
+  
+  // Search a single page with both languages in parallel
+  static Future<void> _searchPageParallel(String query, List<Movie> searchResults, Set<int> seenIds, int page) async {
+    try {
+      // Search both Vietnamese and English simultaneously
+      final futures = <Future<void>>[];
+      
+      // Vietnamese search
+      futures.add(_searchLanguageFast(query, searchResults, seenIds, page, 'vi-VN'));
+      
+      // English search
+      futures.add(_searchLanguageFast(query, searchResults, seenIds, page, 'en-US'));
+      
+      // Wait for both to complete
+      await Future.wait(futures);
+      
+    } catch (e) {
+      // Page search failed, continue
+    }
+  }
+  
+  // Fast language search
+  static Future<void> _searchLanguageFast(String query, List<Movie> searchResults, Set<int> seenIds, int page, String language) async {
+    try {
+      final response = await ApiClient.tmdb().get('/search/multi', queryParameters: {
+        'query': query,
+        'page': page,
+        'language': language,
+        'include_adult': false,
+      });
+      
+      final data = response.data;
+      if (data['results'] != null) {
+        for (final item in data['results']) {
+          if (item['id'] != null && !seenIds.contains(item['id'])) {
+            seenIds.add(item['id']);
+            final movie = Movie.fromJson(item, mediaType: item['media_type'] ?? 'movie');
+            searchResults.add(movie);
+          }
+        }
+      }
+    } catch (e) {
+      // Language search failed, continue
     }
   }
   
