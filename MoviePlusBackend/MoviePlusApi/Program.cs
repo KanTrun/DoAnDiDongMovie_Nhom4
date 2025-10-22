@@ -81,14 +81,26 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins(
-                "https://silvana-detainable-nongratifyingly.ngrok-free.dev",
-                "http://localhost:3000",
-                "http://localhost:8080"
-              )
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        if (builder.Environment.IsDevelopment())
+        {
+            // Allow all localhost ports for development
+            policy.SetIsOriginAllowed(origin => 
+                origin.StartsWith("http://localhost:") || 
+                origin.StartsWith("https://localhost:") ||
+                origin == "https://silvana-detainable-nongratifyingly.ngrok-free.dev")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            policy.WithOrigins(
+                    "https://silvana-detainable-nongratifyingly.ngrok-free.dev"
+                  )
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
     });
 });
 
