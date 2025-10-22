@@ -44,7 +44,8 @@ dependencies:
   local_auth: ^2.1.7
   webview_flutter: ^4.4.2
   youtube_player_iframe: ^5.1.2
-  # url_launcher: ^6.2.2
+  url_launcher: ^6.2.2
+  android_intent_plus: ^5.0.0
   shared_preferences: ^2.2.2
   intl: ^0.18.1
   fl_chart: ^0.66.2
@@ -75,6 +76,10 @@ dependencies:
   # Utils
   equatable: ^2.0.5
   logger: ^2.0.2+1
+  
+  # Location and Maps
+  geolocator: ^10.1.0
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:

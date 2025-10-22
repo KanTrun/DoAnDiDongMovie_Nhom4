@@ -6,6 +6,7 @@ import '../../core/providers/backend_provider.dart';
 import '../favorites/favorites_tab.dart';
 import '../watchlist/watchlist_tab.dart';
 import '../admin/admin_dashboard_screen.dart';
+import '../nearby_cinema/screens/nearby_cinema_screen.dart';
 import 'settings_tab.dart';
 import 'notes_tab.dart';
 import 'ratings_tab.dart';
@@ -437,6 +438,18 @@ class ProfileTab extends ConsumerWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const SettingsTab()),
+          );
+        },
+      },
+      {
+        'icon': Icons.location_on_outlined,
+        'title': 'Rạp gần tôi',
+        'subtitle': 'Tìm rạp chiếu phim gần vị trí của bạn',
+        'color': const Color(0xFFE50914),
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NearbyCinemaScreen()),
           );
         },
       },
